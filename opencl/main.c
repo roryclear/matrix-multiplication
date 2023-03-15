@@ -26,6 +26,7 @@ int main(void)
     int err;                            // error code returned from api calls
       
     cl_device_id device_id;             // compute device id
+    clGetDeviceIDs(NULL, CL_DEVICE_TYPE_GPU, 1, &device_id, NULL);
     cl_context context = clCreateContext(0, 1, &device_id, NULL, NULL, &err);
     cl_command_queue commands = clCreateCommandQueue(context, device_id, 0, &err);
     cl_program program = clCreateProgramWithSource(context, 1, (const char **) & KernelSource, NULL, &err);
