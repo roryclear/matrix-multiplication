@@ -27,8 +27,16 @@ const char *KernelSource2 = "\n" \
 "   const unsigned int count)                                           \n" \
 "{                                                                      \n" \
 "   int i = get_global_id(0);                                           \n" \
-"   if(i < count)                                                       \n" \
-"       output[i] = a[i] * a[i];                                \n" \
+"   int row = get_global_id(0) / count;                                           \n" \
+"   int col = get_global_id(0) % count;                                           \n" \
+"   if(row < count && col < count) {                                                      \n" \
+    "int total = 0;\n"\
+    "for(int j = 0; j < count; j++)\n" \
+    "{  \n" \
+    "    total += a[(row * count) + i] + b[(i * count) + col];  \n" \
+    "}\n" \
+"       output[(row * count) + col] = total;                                \n" \
+"    }                             \n" \
 "}                                                                      \n" \
 "\n";
  
@@ -37,7 +45,9 @@ const char *KernelSource2 = "\n" \
 int main(void)
 {
     int err;                            // error code returned from api calls
-      
+
+    printf("workgroup size = %d\n",CL_KERNEL_WORK_GROUP_SIZE);
+
     cl_device_id device_id;             // compute device id
     clGetDeviceIDs(NULL, CL_DEVICE_TYPE_GPU, 1, &device_id, NULL);
     cl_context context = clCreateContext(0, 1, &device_id, NULL, NULL, &err);
@@ -57,12 +67,12 @@ int main(void)
     }
     
     err = clEnqueueWriteBuffer(commands, inputA, CL_TRUE, 0, sizeof(float) * DATA_SIZE, data, 0, NULL, NULL);
-    //err = clEnqueueWriteBuffer(commands, inputB, CL_TRUE, 0, sizeof(float) * DATA_SIZE, data, 0, NULL, NULL);
+    err = clEnqueueWriteBuffer(commands, inputB, CL_TRUE, 0, sizeof(float) * DATA_SIZE, data, 0, NULL, NULL);
     clSetKernelArg(kernel, 0, sizeof(cl_mem), &inputA);
     clSetKernelArg(kernel, 1, sizeof(cl_mem), &inputB);
     clSetKernelArg(kernel, 2, sizeof(cl_mem), &output);
     unsigned int count = DATA_SIZE;
-    unsigned int rows = 24;
+    unsigned int rows = 32;
     clSetKernelArg(kernel, 3, sizeof(unsigned int), &rows);
     size_t local;
     
@@ -76,6 +86,7 @@ int main(void)
     unsigned int correct = 0;
     
     for (int i = 0; i < count; i++) {
+        printf("value at %d = %f\n",i,results[i]);
         if (results[i] == data[i] * data[i]) { correct++; }
     }
     printf("Computed '%d/%d' correct values!\n", correct, count);
