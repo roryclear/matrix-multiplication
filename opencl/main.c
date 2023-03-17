@@ -3,9 +3,10 @@
 //clang -framework OpenCL main.c
 // Simple compute kernel which computes the square of an input array
 //
+#include <time.h>
 #include <stdio.h>
 #include <OpenCL/opencl.h>
-#define DATA_SIZE (256)
+#define DATA_SIZE (800*800)
 
 const char *KernelSource = "\n" \
 "__kernel void square(                                                       \n" \
@@ -64,18 +65,18 @@ int main(void)
 
     for(int i = 0; i < DATA_SIZE; i++) {
         //data[i] = i;
-        //data[i] = 10 * (rand() / (float)RAND_MAX);
-        data[i] = 1;
+        data[i] = 10 * (rand() / (float)RAND_MAX);
+        //data[i] = 1;
         //printf("%f\n",data[i]);
     }
-    
+    clock_t begin = clock();
     err = clEnqueueWriteBuffer(commands, inputA, CL_TRUE, 0, sizeof(float) * DATA_SIZE, data, 0, NULL, NULL);
     err = clEnqueueWriteBuffer(commands, inputB, CL_TRUE, 0, sizeof(float) * DATA_SIZE, data, 0, NULL, NULL);
     clSetKernelArg(kernel, 0, sizeof(cl_mem), &inputA);
     clSetKernelArg(kernel, 1, sizeof(cl_mem), &inputB);
     clSetKernelArg(kernel, 2, sizeof(cl_mem), &output);
     unsigned int count = DATA_SIZE;
-    unsigned int rows = 16;
+    unsigned int rows = 800;
     clSetKernelArg(kernel, 3, sizeof(unsigned int), &rows);
     size_t local;
     
@@ -83,13 +84,16 @@ int main(void)
     size_t global = count;
     clEnqueueNDRangeKernel(commands, kernel, 1, NULL, &global, &local, 0, NULL, NULL);
     clFinish(commands);
-    
     float results[DATA_SIZE];
     clEnqueueReadBuffer(commands, output, CL_TRUE, 0, sizeof(float) * count, results, 0, NULL, NULL);
+    clock_t end = clock();
+    double time_spent = (double)(end - begin) / CLOCKS_PER_SEC;
+    printf("time taken opencl: %f\n",time_spent);
     unsigned int correct = 0;
     
     // 
     float results2[DATA_SIZE];
+    begin = clock();
     for(int i = 0; i < rows; i++) {
         for(int j = 0; j < rows; j++) {
             float total = 0;
@@ -100,10 +104,13 @@ int main(void)
             results2[(i * rows) + j] = total;
         }
     }
+    end = clock();
+    time_spent = (double)(end - begin) / CLOCKS_PER_SEC;
+    printf("time taken: %f\n",time_spent);
     //
 
     for (int i = 0; i < count; i++) {
-        printf("value at %d = %f    %f\n",i,results[i],results2[i]);
+        //printf("value at %d = %f    %f\n",i,results[i],results2[i]);
         if (results[i] == data[i] * data[i]) { correct++; }
         if (results2[i] == results[i]) { correct++; }
     }
