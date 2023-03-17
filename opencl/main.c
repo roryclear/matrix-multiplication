@@ -30,10 +30,10 @@ const char *KernelSource2 = "\n" \
 "   int row = get_global_id(0) / count;                                           \n" \
 "   int col = get_global_id(0) % count;                                           \n" \
 "   if(row < count && col < count) {                                                      \n" \
-    "int total = 0;\n"\
+    "float total = 0;\n"\
     "for(int j = 0; j < count; j++)\n" \
     "{  \n" \
-    "    total += a[(row * count) + i] + b[(i * count) + col];  \n" \
+    "    total += a[(row * count) + j] + b[(j * count) + col];  \n" \
     "}\n" \
 "       output[(row * count) + col] = total;                                \n" \
 "    }                             \n" \
@@ -63,7 +63,9 @@ int main(void)
     float data[DATA_SIZE];
 
     for(int i = 0; i < DATA_SIZE; i++) {
-        data[i] = i;
+        //data[i] = i;
+        data[i] = 10 * (rand() / (float)RAND_MAX);
+        //printf("%f\n",data[i]);
     }
     
     err = clEnqueueWriteBuffer(commands, inputA, CL_TRUE, 0, sizeof(float) * DATA_SIZE, data, 0, NULL, NULL);
