@@ -5,7 +5,7 @@
 //
 #include <stdio.h>
 #include <OpenCL/opencl.h>
-#define DATA_SIZE (1024)
+#define DATA_SIZE (256)
 
 const char *KernelSource = "\n" \
 "__kernel void square(                                                       \n" \
@@ -33,7 +33,7 @@ const char *KernelSource2 = "\n" \
     "float total = 0;\n"\
     "for(int j = 0; j < count; j++)\n" \
     "{  \n" \
-    "    total += a[(row * count) + j] + b[(j * count) + col];  \n" \
+    "    total += a[(row * count) + j] * b[(j * count) + col];  \n" \
     "}\n" \
 "       output[(row * count) + col] = total;                                \n" \
 "    }                             \n" \
@@ -64,7 +64,8 @@ int main(void)
 
     for(int i = 0; i < DATA_SIZE; i++) {
         //data[i] = i;
-        data[i] = 10 * (rand() / (float)RAND_MAX);
+        //data[i] = 10 * (rand() / (float)RAND_MAX);
+        data[i] = 1;
         //printf("%f\n",data[i]);
     }
     
@@ -74,7 +75,7 @@ int main(void)
     clSetKernelArg(kernel, 1, sizeof(cl_mem), &inputB);
     clSetKernelArg(kernel, 2, sizeof(cl_mem), &output);
     unsigned int count = DATA_SIZE;
-    unsigned int rows = 32;
+    unsigned int rows = 16;
     clSetKernelArg(kernel, 3, sizeof(unsigned int), &rows);
     size_t local;
     
@@ -87,9 +88,24 @@ int main(void)
     clEnqueueReadBuffer(commands, output, CL_TRUE, 0, sizeof(float) * count, results, 0, NULL, NULL);
     unsigned int correct = 0;
     
+    // 
+    float results2[DATA_SIZE];
+    for(int i = 0; i < rows; i++) {
+        for(int j = 0; j < rows; j++) {
+            float total = 0;
+            for(int k = 0; k < rows; k++)
+            {
+                total += data[(i * rows) + k] * data[j + (k * rows)];
+            }
+            results2[(i * rows) + j] = total;
+        }
+    }
+    //
+
     for (int i = 0; i < count; i++) {
-        printf("value at %d = %f\n",i,results[i]);
+        printf("value at %d = %f    %f\n",i,results[i],results2[i]);
         if (results[i] == data[i] * data[i]) { correct++; }
+        if (results2[i] == results[i]) { correct++; }
     }
     printf("Computed '%d/%d' correct values!\n", correct, count);
     clReleaseMemObject(inputA);
