@@ -9,18 +9,6 @@
 #define DATA_SIZE (800*800)
 
 const char *KernelSource = "\n" \
-"__kernel void square(                                                       \n" \
-"   __global float* input,                                              \n" \
-"   __global float* output,                                             \n" \
-"   const unsigned int count)                                           \n" \
-"{                                                                      \n" \
-"   int i = get_global_id(0);                                           \n" \
-"   if(i < count)                                                       \n" \
-"       output[i] = input[i] * input[i];                                \n" \
-"}                                                                      \n" \
-"\n";
-
-const char *KernelSource2 = "\n" \
 "__kernel void matmul(                                                       \n" \
 "   __global float* a,                                              \n" \
 "   __global float* b,                                              \n" \
@@ -53,7 +41,7 @@ int main(void)
     clGetDeviceIDs(NULL, CL_DEVICE_TYPE_GPU, 1, &device_id, NULL);
     cl_context context = clCreateContext(0, 1, &device_id, NULL, NULL, &err);
     cl_command_queue commands = clCreateCommandQueue(context, device_id, 0, &err);
-    cl_program program = clCreateProgramWithSource(context, 1, (const char **) & KernelSource2, NULL, &err);
+    cl_program program = clCreateProgramWithSource(context, 1, (const char **) & KernelSource, NULL, &err);
     clBuildProgram(program, 0, NULL, NULL, NULL, NULL);
     cl_kernel kernel = clCreateKernel(program, "matmul", &err);
     
@@ -64,10 +52,7 @@ int main(void)
     float data[DATA_SIZE];
 
     for(int i = 0; i < DATA_SIZE; i++) {
-        //data[i] = i;
         data[i] = 10 * (rand() / (float)RAND_MAX);
-        //data[i] = 1;
-        //printf("%f\n",data[i]);
     }
     clock_t begin = clock();
     err = clEnqueueWriteBuffer(commands, inputA, CL_TRUE, 0, sizeof(float) * DATA_SIZE, data, 0, NULL, NULL);
@@ -89,9 +74,7 @@ int main(void)
     clock_t end = clock();
     double time_spent = (double)(end - begin) / CLOCKS_PER_SEC;
     printf("time taken opencl: %f\n",time_spent);
-    unsigned int correct = 0;
     
-    // 
     float results2[DATA_SIZE];
     begin = clock();
     for(int i = 0; i < rows; i++) {
@@ -107,11 +90,9 @@ int main(void)
     end = clock();
     time_spent = (double)(end - begin) / CLOCKS_PER_SEC;
     printf("time taken: %f\n",time_spent);
-    //
 
+    unsigned int correct = 0;
     for (int i = 0; i < count; i++) {
-        //printf("value at %d = %f    %f\n",i,results[i],results2[i]);
-        if (results[i] == data[i] * data[i]) { correct++; }
         if (results2[i] == results[i]) { correct++; }
     }
     printf("Computed '%d/%d' correct values!\n", correct, count);
