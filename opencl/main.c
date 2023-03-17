@@ -22,6 +22,7 @@ const char *KernelSource = "\n" \
 const char *KernelSource2 = "\n" \
 "__kernel void matmul(                                                       \n" \
 "   __global float* a,                                              \n" \
+"   __global float* b,                                              \n" \
 "   __global float* output,                                             \n" \
 "   const unsigned int count)                                           \n" \
 "{                                                                      \n" \
@@ -46,6 +47,7 @@ int main(void)
     cl_kernel kernel = clCreateKernel(program, "matmul", &err);
     
     cl_mem inputA = clCreateBuffer(context,  CL_MEM_READ_ONLY,  sizeof(float) * DATA_SIZE, NULL, NULL);
+    cl_mem inputB = clCreateBuffer(context,  CL_MEM_READ_ONLY,  sizeof(float) * DATA_SIZE, NULL, NULL);
     cl_mem output = clCreateBuffer(context, CL_MEM_WRITE_ONLY, sizeof(float) * DATA_SIZE, NULL, NULL);
     
     float data[DATA_SIZE];
@@ -55,10 +57,13 @@ int main(void)
     }
     
     err = clEnqueueWriteBuffer(commands, inputA, CL_TRUE, 0, sizeof(float) * DATA_SIZE, data, 0, NULL, NULL);
+    //err = clEnqueueWriteBuffer(commands, inputB, CL_TRUE, 0, sizeof(float) * DATA_SIZE, data, 0, NULL, NULL);
     clSetKernelArg(kernel, 0, sizeof(cl_mem), &inputA);
-    clSetKernelArg(kernel, 1, sizeof(cl_mem), &output);
+    clSetKernelArg(kernel, 1, sizeof(cl_mem), &inputB);
+    clSetKernelArg(kernel, 2, sizeof(cl_mem), &output);
     unsigned int count = DATA_SIZE;
-    clSetKernelArg(kernel, 2, sizeof(unsigned int), &count);
+    unsigned int rows = 24;
+    clSetKernelArg(kernel, 3, sizeof(unsigned int), &rows);
     size_t local;
     
     clGetKernelWorkGroupInfo(kernel, device_id, CL_KERNEL_WORK_GROUP_SIZE, sizeof(local), &local, NULL);
@@ -75,6 +80,7 @@ int main(void)
     }
     printf("Computed '%d/%d' correct values!\n", correct, count);
     clReleaseMemObject(inputA);
+    clReleaseMemObject(inputB);
     clReleaseMemObject(output);
     clReleaseProgram(program);
     clReleaseKernel(kernel);
