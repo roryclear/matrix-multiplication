@@ -31,7 +31,7 @@ def mamtul(a,b,length):
 	  }
 	}
 	""").build()
-
+	
 	knl = prg.matmul
 	knl(queue, a.shape, None, a_g, b_g, np.int32(length), res_g)
 	res_np = np.empty_like(a)#fix later

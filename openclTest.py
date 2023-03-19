@@ -1,5 +1,5 @@
 import numpy as np
-import matmulmetal as mmm
+import matmulopencl as mmo
 
 length = 128
 size = length*length
@@ -16,6 +16,6 @@ for r in range(length):
       total += a[r * length + n] * b[c + n * length]
     answer[r * length + c] = total
 
-output = mmm.mamtul(a,b,length)
+output = mmo.mamtul(a,b,length)
 assert np.allclose(output, answer)
 print("passed")
