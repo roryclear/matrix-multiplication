@@ -4,7 +4,7 @@ import numpy as np
 import pyopencl as cl
 import time
 
-length = 32
+length = 128
 size = length*length
 
 a_np = np.random.rand(size).astype(np.float32)
@@ -34,9 +34,8 @@ b_g = cl.Buffer(ctx, mf.READ_ONLY | mf.COPY_HOST_PTR, hostbuf=b_np)
 
 prg = cl.Program(ctx, """
 __kernel void matmul(
-    __global const float *a_g, __global const float *b_g, __global float *res_g)
+    __global const float *a_g, __global const float *b_g, int length, __global float *res_g)
 {
-  int length = 32;
   int gid = get_global_id(0);
   int row = gid / length;
   int col = gid % length;
@@ -54,7 +53,7 @@ __kernel void matmul(
 
 res_g = cl.Buffer(ctx, mf.WRITE_ONLY, a_np.nbytes)
 knl = prg.matmul  # Use this Kernel object for repeated calls
-knl(queue, a_np.shape, None, a_g, b_g, res_g)
+knl(queue, a_np.shape, None, a_g, b_g, np.int32(length), res_g)
 
 res_np = np.empty_like(a_np)
 start_time = time.time()
