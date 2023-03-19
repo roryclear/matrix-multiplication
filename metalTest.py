@@ -1,8 +1,4 @@
-#!/usr/bin/env python
-
 import numpy as np
-import pyopencl as cl
-import time
 import matmulmetal as mmm
 
 length = 128
@@ -22,3 +18,4 @@ for r in range(length):
 
 output = mmm.mamtul(a,b,length)
 assert np.allclose(output, answer)
+print("passed")
