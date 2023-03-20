@@ -18,10 +18,10 @@ prg = f"""#include <metal_stdlib>
 using namespace metal;
 kernel void matmul(device float *a,
                     device float *b,
+                    device int& length,
                     device float *res,
 uint index [[thread_position_in_grid]])
-{{   
-      int length = 128;
+{{     
       int row = index / length;
       int col = index % length;
       float total = 0;
@@ -60,13 +60,18 @@ t = b_buffer.contents()
 m = t.as_buffer(b.nbytes)
 m[:] = bytes(b)
 
+n = np.int32(128)
+n_buffer = device.newBufferWithLength_options_(4 ,1)
+n_buffer.contents().__setitem__(0,b'\x80') #length (128) in hex
 
 res = np.empty_like(b)
 res_buffer = device.newBufferWithLength_options_(res.nbytes ,1)
 
 encoder.setBuffer_offset_atIndex_(a_buffer, 0, 0)
 encoder.setBuffer_offset_atIndex_(b_buffer, 0, 1)
-encoder.setBuffer_offset_atIndex_(res_buffer, 0, 2)
+encoder.setBuffer_offset_atIndex_(n_buffer, 0, 2)
+encoder.setBuffer_offset_atIndex_(res_buffer, 0, 3)
+
 
 maxThreads = pipeline_state.maxTotalThreadsPerThreadgroup()
 encoder.dispatchThreads_threadsPerThreadgroup_(Metal.MTLSizeMake(128*128,1,1), Metal.MTLSizeMake(maxThreads,1,1))
