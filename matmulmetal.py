@@ -16,10 +16,23 @@ encoder = command_buffer.computeCommandEncoder()
 
 prg = f"""#include <metal_stdlib>
 using namespace metal;
-kernel void matmul(device float* a,
+kernel void matmul(device float *a,
+                    device float *b,
+                    device float *res,
 uint index [[thread_position_in_grid]])
 {{   
-    a[0] = 23;
+      int length = 128;
+      int row = index / length;
+      int col = index % length;
+      float total = 0;
+      if(row < length && col < length) 
+      {{
+        for(int i = 0; i < length; i++)
+        {{
+          total += a[row * length + i] * b[col + i * length];
+        }}
+        res[row * length + col] = total;
+      }}
 }}"""
 
 options = Metal.MTLCompileOptions.alloc().init()
@@ -27,37 +40,57 @@ library = unwrap(device.newLibraryWithSource_options_error_(prg, options, None))
 fxn = library.newFunctionWithName_("matmul")
 pipeline_state = unwrap(device.newComputePipelineStateWithFunction_error_(fxn, None))
 
+print("max thread per threadgroup =",pipeline_state.maxTotalThreadsPerThreadgroup())
 
 encoder.setComputePipelineState_(pipeline_state)
 
-a = np.random.randn(128).astype(np.float32)
+length = 128
+size = length*length
+
+a = np.random.randn(size).astype(np.float32)
 a_buffer = device.newBufferWithLength_options_(a.nbytes ,1)
 t = a_buffer.contents()
 m = t.as_buffer(a.nbytes)
 m[:] = bytes(a)
 
-b = np.random.randn(128).astype(np.float32)
+b = np.random.randn(size).astype(np.float32)
+
 b_buffer = device.newBufferWithLength_options_(b.nbytes ,1)
 t = b_buffer.contents()
 m = t.as_buffer(b.nbytes)
 m[:] = bytes(b)
 
 
-encoder.setBuffer_offset_atIndex_(a_buffer, 0, 0)
+res = np.empty_like(b)
+res_buffer = device.newBufferWithLength_options_(res.nbytes ,1)
 
-encoder.dispatchThreads_threadsPerThreadgroup_(Metal.MTLSizeMake(1,1,1), Metal.MTLSizeMake(1,1,1))
+encoder.setBuffer_offset_atIndex_(a_buffer, 0, 0)
+encoder.setBuffer_offset_atIndex_(b_buffer, 0, 1)
+encoder.setBuffer_offset_atIndex_(res_buffer, 0, 2)
+
+maxThreads = pipeline_state.maxTotalThreadsPerThreadgroup()
+encoder.dispatchThreads_threadsPerThreadgroup_(Metal.MTLSizeMake(128*128,1,1), Metal.MTLSizeMake(maxThreads,1,1))
 encoder.endEncoding()
 command_buffer.commit()
 command_buffer.waitUntilCompleted()
 
-y = a_buffer.contents()
-
+y = res_buffer.contents()
 s = y.__getitem__(0)
-for i in range(1,512):
+for i in range(1,size*4):
     s += y.__getitem__(i)
-output = struct.unpack('128f',s)
+output = struct.unpack(str(size)+'f',s)
 output = np.asarray(output)
 print(output)
 
+answer = np.empty_like(a)
+for r in range(length):
+  for c in range(length):
+    total = 0
+    for n in range(length):
+      total += a[r * length + n] * b[c + n * length]
+    answer[r * length + c] = total
 
+print(answer)
+
+assert np.allclose(output, answer, 0.1) #todo are is cuda and opencl closer?
 print("done")
