@@ -30,8 +30,18 @@ pipeline_state = unwrap(device.newComputePipelineStateWithFunction_error_(fxn, N
 
 encoder.setComputePipelineState_(pipeline_state)
 
-a = np.random.rand(128).astype(np.float32)
+a = np.random.randn(128).astype(np.float32)
 a_buffer = device.newBufferWithLength_options_(a.nbytes ,1)
+t = a_buffer.contents()
+m = t.as_buffer(a.nbytes)
+m[:] = bytes(a)
+
+b = np.random.randn(128).astype(np.float32)
+b_buffer = device.newBufferWithLength_options_(b.nbytes ,1)
+t = b_buffer.contents()
+m = t.as_buffer(b.nbytes)
+m[:] = bytes(b)
+
 
 encoder.setBuffer_offset_atIndex_(a_buffer, 0, 0)
 
