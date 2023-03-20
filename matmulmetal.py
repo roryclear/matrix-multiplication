@@ -40,13 +40,13 @@ encoder.endEncoding()
 command_buffer.commit()
 command_buffer.waitUntilCompleted()
 
-
 y = a_buffer.contents()
 
 s = y.__getitem__(0)
 for i in range(1,512):
     s += y.__getitem__(i)
 output = struct.unpack('128f',s)
+output = np.asarray(output)
 print(output)
 
 
