@@ -32,9 +32,9 @@ def matmul(a,b,length):
     }}"""
 
     options = Metal.MTLCompileOptions.alloc().init()
-    library = device.newLibraryWithSource_options_error_(prg, options, None)
+    library, err = device.newLibraryWithSource_options_error_(prg, options, None)
     fxn = library.newFunctionWithName_("matmul")
-    pipeline_state = device.newComputePipelineStateWithFunction_error_(fxn, None)
+    pipeline_state, err = device.newComputePipelineStateWithFunction_error_(fxn, None)
     encoder.setComputePipelineState_(pipeline_state)
 
     a_buffer = device.newBufferWithLength_options_(a.nbytes ,1)
