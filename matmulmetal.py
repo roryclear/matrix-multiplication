@@ -66,8 +66,9 @@ def matmul(a,b,length):
     command_buffer.waitUntilCompleted()
 
     y = res_buffer.contents()
+    aa = y.as_tuple(length * length * 4)
     s = y.__getitem__(0)
     for i in range(1,res.nbytes):
-        s += y.__getitem__(i)
+        s += aa[i]
     output = np.asarray(struct.unpack(str(int(res.nbytes / 4))+'f',s)) #todo find faster and better way
     return output
