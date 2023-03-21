@@ -63,6 +63,9 @@ m[:] = bytes(b)
 n = np.int32(128)
 n_buffer = device.newBufferWithLength_options_(4 ,1)
 n_buffer.contents().__setitem__(0,b'\x80') #length (128) in hex
+n_buffer.contents().__setitem__(1,b'\x00') #length (128) in hex
+n_buffer.contents().__setitem__(2,b'\x00') #length (128) in hex
+n_buffer.contents().__setitem__(3,b'\x00') #length (128) in hex
 
 res = np.empty_like(b)
 res_buffer = device.newBufferWithLength_options_(res.nbytes ,1)
