@@ -16,6 +16,6 @@ for r in range(length):
       total += a[r * length + n] * b[c + n * length]
     answer[r * length + c] = total
 
-output = mmo.mamtul(a,b,length)
+output = mmo.matmul(a,b,length)
 assert np.allclose(output, answer)
 print("passed")
