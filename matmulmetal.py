@@ -69,8 +69,10 @@ encoder.setBuffer_offset_atIndex_(a_buffer, 0, 0)
 encoder.setBuffer_offset_atIndex_(b_buffer, 0, 1)
 encoder.setBuffer_offset_atIndex_(n_buffer, 0, 2)
 encoder.setBuffer_offset_atIndex_(res_buffer, 0, 3)
-maxThreads = pipeline_state.maxTotalThreadsPerThreadgroup()
-encoder.dispatchThreads_threadsPerThreadgroup_(Metal.MTLSizeMake(length*length,1,1), Metal.MTLSizeMake(maxThreads,1,1))
+threadGroupSize = pipeline_state.maxTotalThreadsPerThreadgroup()
+if length < threadGroupSize:
+    threadGroupSize = length
+encoder.dispatchThreads_threadsPerThreadgroup_(Metal.MTLSizeMake(length*length,1,1), Metal.MTLSizeMake(threadGroupSize,1,1))
 encoder.endEncoding()
 command_buffer.commit()
 command_buffer.waitUntilCompleted()
