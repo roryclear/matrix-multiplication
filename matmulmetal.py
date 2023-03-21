@@ -54,18 +54,17 @@ m = t.as_buffer(a.nbytes)
 m[:] = bytes(a)
 
 b = np.random.randn(size).astype(np.float32)
-
 b_buffer = device.newBufferWithLength_options_(b.nbytes ,1)
 t = b_buffer.contents()
 m = t.as_buffer(b.nbytes)
 m[:] = bytes(b)
 
-n = np.int32(128)
+n = np.int32(length)
 n_buffer = device.newBufferWithLength_options_(4 ,1)
-n_buffer.contents().__setitem__(0,b'\x80') #length (128) in hex
-n_buffer.contents().__setitem__(1,b'\x00') #length (128) in hex
-n_buffer.contents().__setitem__(2,b'\x00') #length (128) in hex
-n_buffer.contents().__setitem__(3,b'\x00') #length (128) in hex
+n_buffer.contents().__setitem__(0,n.tobytes()[0].to_bytes(1,'big'))
+n_buffer.contents().__setitem__(1,n.tobytes()[1].to_bytes(1,'big'))
+n_buffer.contents().__setitem__(2,n.tobytes()[2].to_bytes(1,'big'))
+n_buffer.contents().__setitem__(3,n.tobytes()[3].to_bytes(1,'big'))
 
 res = np.empty_like(b)
 res_buffer = device.newBufferWithLength_options_(res.nbytes ,1)
@@ -77,7 +76,7 @@ encoder.setBuffer_offset_atIndex_(res_buffer, 0, 3)
 
 
 maxThreads = pipeline_state.maxTotalThreadsPerThreadgroup()
-encoder.dispatchThreads_threadsPerThreadgroup_(Metal.MTLSizeMake(128*128,1,1), Metal.MTLSizeMake(maxThreads,1,1))
+encoder.dispatchThreads_threadsPerThreadgroup_(Metal.MTLSizeMake(length*length,1,1), Metal.MTLSizeMake(maxThreads,1,1))
 encoder.endEncoding()
 command_buffer.commit()
 command_buffer.waitUntilCompleted()
