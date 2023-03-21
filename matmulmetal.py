@@ -49,22 +49,18 @@ size = length*length
 
 a = np.random.randn(size).astype(np.float32)
 a_buffer = device.newBufferWithLength_options_(a.nbytes ,1)
-t = a_buffer.contents()
-m = t.as_buffer(a.nbytes)
+m = a_buffer.contents().as_buffer(a.nbytes)
 m[:] = bytes(a)
 
 b = np.random.randn(size).astype(np.float32)
 b_buffer = device.newBufferWithLength_options_(b.nbytes ,1)
-t = b_buffer.contents()
-m = t.as_buffer(b.nbytes)
+m = b_buffer.contents().as_buffer(b.nbytes)
 m[:] = bytes(b)
 
 n = np.int32(length)
 n_buffer = device.newBufferWithLength_options_(4 ,1)
-n_buffer.contents().__setitem__(0,n.tobytes()[0].to_bytes(1,'big'))
-n_buffer.contents().__setitem__(1,n.tobytes()[1].to_bytes(1,'big'))
-n_buffer.contents().__setitem__(2,n.tobytes()[2].to_bytes(1,'big'))
-n_buffer.contents().__setitem__(3,n.tobytes()[3].to_bytes(1,'big'))
+for i in range(4):
+    n_buffer.contents().__setitem__(i,n.tobytes()[i].to_bytes(1,'big'))
 
 res = np.empty_like(b)
 res_buffer = device.newBufferWithLength_options_(res.nbytes ,1)
@@ -73,8 +69,6 @@ encoder.setBuffer_offset_atIndex_(a_buffer, 0, 0)
 encoder.setBuffer_offset_atIndex_(b_buffer, 0, 1)
 encoder.setBuffer_offset_atIndex_(n_buffer, 0, 2)
 encoder.setBuffer_offset_atIndex_(res_buffer, 0, 3)
-
-
 maxThreads = pipeline_state.maxTotalThreadsPerThreadgroup()
 encoder.dispatchThreads_threadsPerThreadgroup_(Metal.MTLSizeMake(length*length,1,1), Metal.MTLSizeMake(maxThreads,1,1))
 encoder.endEncoding()
@@ -85,8 +79,7 @@ y = res_buffer.contents()
 s = y.__getitem__(0)
 for i in range(1,size*4):
     s += y.__getitem__(i)
-output = struct.unpack(str(size)+'f',s)
-output = np.asarray(output)
+output = np.asarray(struct.unpack(str(size)+'f',s))
 print(output)
 
 answer = np.empty_like(a)
