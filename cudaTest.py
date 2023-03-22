@@ -9,6 +9,8 @@ b = np.random.rand(size).astype(np.float32)
 answer = np.empty_like(a)
 output = np.empty_like(a)
 
+output = mmc.matmul(a,b,length)
+
 for r in range(length):
   for c in range(length):
     total = 0
@@ -16,6 +18,5 @@ for r in range(length):
       total += a[r * length + n] * b[c + n * length]
     answer[r * length + c] = total
 
-output = mmc.matmul(a,b,length)
 assert np.allclose(output, answer)
 print("passed")
