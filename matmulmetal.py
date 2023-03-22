@@ -65,10 +65,14 @@ def matmul(a,b,length):
     command_buffer.commit()
     command_buffer.waitUntilCompleted()
 
-    y = res_buffer.contents()
-    aa = y.as_tuple(length * length * 4)
-    s = y.__getitem__(0)
-    for i in range(1,res.nbytes):
-        s += aa[i]
-    output = np.asarray(struct.unpack(str(int(res.nbytes / 4))+'f',s)) #todo find faster and better way
+    x = np.asarray(res_buffer.contents().as_buffer(res.nbytes))
+    output = np.empty_like(a)
+    for i in range(0,len(x),4):
+        s = ""
+        for j in range(4):
+            h = hex(x[i+3-j])[2:]
+            if len(h) < 2:
+                h = "0" + h
+            s += h
+        output[int(i/4)] = struct.unpack('!f', bytes.fromhex(s))[0]
     return output
