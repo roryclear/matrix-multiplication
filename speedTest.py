@@ -20,6 +20,8 @@ start_time = time.time()
 oo = mmo.matmul(a,b,length)
 print("--- opencl %s seconds ---" % (time.time() - start_time))
 
+assert np.allclose(om, oo)
+print("outputs are close")
 
 for r in range(length):
   for c in range(length):
