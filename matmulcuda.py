@@ -4,6 +4,8 @@ import pycuda.autoinit
 import numpy as np
 
 def matmul(a,b,length):
+    a = a.flatten()
+    b = b.flatten()
     a_g = cuda.mem_alloc(a.nbytes)
     cuda.memcpy_htod(a_g,a)
     b_g = cuda.mem_alloc(b.nbytes)

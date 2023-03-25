@@ -2,6 +2,8 @@ import numpy as np
 import pyopencl as cl
 
 def matmul(a,b,length):
+	a = a.flatten()
+	b = b.flatten()
 	platform = cl.get_platforms()
 	my_gpu_devices = platform[0].get_devices(device_type=cl.device_type.GPU)
 	ctx = cl.Context(devices=my_gpu_devices)
