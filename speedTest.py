@@ -3,7 +3,7 @@ import matmulmetal as mmm
 import matmulopencl as mmo
 import time
 
-length = 256
+length = 2048
 
 a = np.random.rand(length,length).astype(np.float32)
 b = np.random.rand(length,length).astype(np.float32)
@@ -20,7 +20,9 @@ print("--- opencl %s seconds ---" % (time.time() - start_time))
 assert np.allclose(om, oo)
 print("outputs are close")
 
+start_time = time.time()
 answer = np.matmul(a,b).flatten()
+print("--- numpy %s seconds ---" % (time.time() - start_time))
 
 assert np.allclose(om, answer)
 assert np.allclose(oo, answer)
