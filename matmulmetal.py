@@ -4,7 +4,7 @@ import Foundation
 import numpy as np
 import struct
 
-def matmul(a,b,length):
+def matmul(a,b):
     aRows = a.shape[0]
     aCols = a.shape[1]
     bRows = b.shape[0]
@@ -72,8 +72,8 @@ def matmul(a,b,length):
     encoder.setBuffer_offset_atIndex_(bCols_buffer, 0, 4)
     encoder.setBuffer_offset_atIndex_(res_buffer, 0, 5)
     threadGroupSize = pipeline_state.maxTotalThreadsPerThreadgroup()
-    if length < threadGroupSize:
-        threadGroupSize = length
+    if aRows*bCols < threadGroupSize:
+        threadGroupSize = aRows*bCols
     encoder.dispatchThreads_threadsPerThreadgroup_(Metal.MTLSizeMake(aRows*bCols,1,1), Metal.MTLSizeMake(threadGroupSize,1,1))
     encoder.endEncoding()
     command_buffer.commit()

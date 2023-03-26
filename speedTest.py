@@ -4,18 +4,17 @@ import matmulopencl as mmo
 import time
 
 length = 256
-size = length*length
 
 a = np.random.rand(length,length).astype(np.float32)
 b = np.random.rand(length,length).astype(np.float32)
 answer = np.empty_like(a)
 
 start_time = time.time()
-om = mmm.matmul(a,b,length)
+om = mmm.matmul(a,b)
 print("--- metal %s seconds ---" % (time.time() - start_time))
 
 start_time = time.time()
-oo = mmo.matmul(a,b,length)
+oo = mmo.matmul(a,b)
 print("--- opencl %s seconds ---" % (time.time() - start_time))
 
 assert np.allclose(om, oo)

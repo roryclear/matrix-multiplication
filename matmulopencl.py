@@ -1,7 +1,7 @@
 import numpy as np
 import pyopencl as cl
 
-def matmul(a,b,length):
+def matmul(a,b):
 	aRows = a.shape[0]
 	aCols = a.shape[1]
 	bRows = b.shape[0]
