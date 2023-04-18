@@ -3,9 +3,10 @@
 
 inline void matmulImplNaive(const float *left, const float *right,
                             float *result) {
-int rows = 64;
-int columns = 64;
-int inners = 64;
+int dim = 64;
+int rows = dim;
+int columns = dim;
+int inners = dim;
   for (int row = 0; row < rows; row++) {
     for (int col = 0; col < columns; col++) {
       for (int inner = 0; inner < inners; inner++) {
@@ -14,15 +15,16 @@ int inners = 64;
 } } } }
 
 int main() {
-    float left[64*64] = {};
-    float right[64*64] = {};
-    float result[64*64] = {};
-    for(int i = 0; i < 64*64; i++) {
+    const int dim = 64;
+    float left[dim*dim] = {};
+    float right[dim*dim] = {};
+    float result[dim*dim] = {};
+    for(int i = 0; i < dim*dim; i++) {
         left[i] = rand();
         right[i] = rand();
     }
     matmulImplNaive(left,right,result);
-    for(int i = 0; i < 64*64; i++) {
+    for(int i = 0; i < dim*dim; i++) {
         std::cout << result[i];
     }
     std::cout << "matmul??";
