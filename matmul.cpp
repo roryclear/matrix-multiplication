@@ -34,8 +34,8 @@ int main() {
     float resultA[dim*dim] = {};
     float resultB[dim*dim] = {};
     for(int i = 0; i < dim*dim; i++) {
-        left[i] = rand();
-        right[i] = rand();
+        left[i] = static_cast <float> (rand()) / static_cast <float> (RAND_MAX);
+        right[i] = static_cast <float> (rand()) / static_cast <float> (RAND_MAX);
     }
     clock_t tStart = clock();
     matmulImplNaive(left,right,resultA,dim);
