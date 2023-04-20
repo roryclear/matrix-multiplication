@@ -31,21 +31,25 @@ int main() {
     const int dim = 512;
     float left[dim*dim] = {};
     float right[dim*dim] = {};
-    float result[dim*dim] = {};
+    float resultA[dim*dim] = {};
+    float resultB[dim*dim] = {};
     for(int i = 0; i < dim*dim; i++) {
         left[i] = rand();
         right[i] = rand();
     }
     clock_t tStart = clock();
-    matmulImplNaive(left,right,result,dim);
+    matmulImplNaive(left,right,resultA,dim);
     printf("Time taken: %.2fs\n", (double)(clock() - tStart)/CLOCKS_PER_SEC);
 
     tStart = clock();
-    matmulFaster(left,right,result,dim);
+    matmulFaster(left,right,resultB,dim);
     printf("Time taken: %.2fs\n", (double)(clock() - tStart)/CLOCKS_PER_SEC);
-    //for(int i = 0; i < dim*dim; i++) {
-    //    std::cout << result[i];
-    //}
-    std::cout << "matmul??";
+
+    for(int i = 0; i < dim*dim; i++) {
+        if(resultA[i] != resultB[i]) {
+            return 0;
+        }
+    }
+    std::cout << "outputs equal";
     return 0;
 }
