@@ -29,18 +29,14 @@ int inners = dim;
 
 inline void matmulTiling(const float *left, const float *right,
                             float *result, int dim, int tileSize) {
-int rows = dim;
-int columns = dim;
-int inners = dim;
-
-  for(int rowTile = 0; rowTile < rows; rowTile+=tileSize) {
+  for(int rowTile = 0; rowTile < dim; rowTile+=tileSize) {
     for (int row = rowTile; row < rowTile+tileSize; row++) {
-      for(int innerTile = 0; innerTile < inners; innerTile+=tileSize) {
+      for(int innerTile = 0; innerTile < dim; innerTile+=tileSize) {
         for (int inner = innerTile; inner < innerTile+tileSize; inner++) {
-          for(int colTile = 0; colTile < columns; colTile+=tileSize) {
+          for(int colTile = 0; colTile < dim; colTile+=tileSize) {
             for (int col = colTile; col < colTile+tileSize; col++) {
-              result[row * columns + col] +=
-                  left[row * columns + inner] * right[inner * columns + col];
+              result[row * dim + col] +=
+                  left[row * dim + inner] * right[inner * dim + col];
             }
           }
         }
@@ -49,13 +45,27 @@ int inners = dim;
   }
 }
 
+inline void matmulTiling2(const float *left, const float *right,
+                            float *result, int dim, int tileSize) {
+    for (int row = 0; row < dim; row++) {
+      for(int innerTile = 0; innerTile < dim; innerTile+=tileSize) {
+        for (int inner = innerTile; inner < innerTile+tileSize; inner++) {
+            for (int col = 0; col < dim; col++) {
+              result[row * dim + col] +=
+                  left[row * dim + inner] * right[inner * dim + col];
+            }
+        }
+      }
+    }
+}
+
 int main() {
-    const int dim = 512;
-    float left[dim*dim] = {};
-    float right[dim*dim] = {};
-    float resultA[dim*dim] = {};
-    float resultB[dim*dim] = {};
-    float resultC[dim*dim] = {};
+    const int dim = 1024;
+    float *left =  new float[dim*dim];
+    float *right =  new float[dim*dim];
+    float *resultA =  new float[dim*dim];
+    float *resultB =  new float[dim*dim];
+    float *resultC =  new float[dim*dim];
     for(int i = 0; i < dim*dim; i++) {
         left[i] = static_cast <float> (rand()) / static_cast <float> (RAND_MAX);
         right[i] = static_cast <float> (rand()) / static_cast <float> (RAND_MAX);
@@ -70,14 +80,15 @@ int main() {
 
     int tileSize = 1;
     while(tileSize < dim) {
-      float resultC[dim*dim] = {};
+      resultC =  new float[dim*dim];
       tStart = clock();
       matmulTiling(left,right,resultC,dim,tileSize);
       printf("Time taken (reorder + tiling): %.2fs tileSize = %d \n", (double)(clock() - tStart)/CLOCKS_PER_SEC, tileSize);
       for(int i = 0; i < dim*dim; i++) {
-        if(resultA[i] != resultC[i]) {
-            return 0;
-        }
+          if(resultA[i] != resultC[i]) {
+              printf("ffs %d",i);
+              return 0;
+          }
       }
       tileSize += tileSize;
     }
