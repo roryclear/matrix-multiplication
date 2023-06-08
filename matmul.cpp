@@ -1,6 +1,7 @@
 #include <iostream>
 #include <random>
 #include <time.h>
+#include <omp.h>
 
 //g++ -O3 -march=native -ffast-math matmul.cpp -o a
 
@@ -45,6 +46,27 @@ inline void matmulTiling(const float *left, const float *right,
   }
 }
 
+inline void matmulTilingMulti(const float *left, const float *right,
+                            float *result, int dim, int tileSize) {
+  #pragma omp parallel for
+  for(int rowTile = 0; rowTile < dim; rowTile+=tileSize) {
+    for (int innerTile = 0; innerTile < dim; innerTile+=tileSize) {
+      for(int colTile = 0; colTile < dim; colTile+=tileSize) {
+        for (int row = rowTile; row < rowTile+tileSize; row++) {
+          for(int inner = innerTile; inner < innerTile+tileSize; inner++) {
+            for (int col = colTile; col < colTile+tileSize; col++) {
+              result[row * dim + col] +=
+                  left[row * dim + inner] * right[inner * dim + col];
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+
+
 int main() {
     const int dim = 2048;
     float *left =  new float[dim*dim];
@@ -64,12 +86,30 @@ int main() {
     matmulFaster(left,right,resultB,dim);
     printf("Time taken (reorder): %.2fs\n", (double)(clock() - tStart)/CLOCKS_PER_SEC);
 
-    int tileSize = 2;
+    int tileSize = 8;
+
+
     while(tileSize < dim) {
       resultC =  new float[dim*dim];
       tStart = clock();
       matmulTiling(left,right,resultC,dim,tileSize);
       printf("Time taken (reorder + tiling): %.2fs tileSize = %d \n", (double)(clock() - tStart)/CLOCKS_PER_SEC, tileSize);
+      for(int i = 0; i < dim*dim; i++) {
+          if(resultA[i] != resultC[i]) {
+              printf("ffs %d",i);
+              return 0;
+          }
+      }
+      tileSize += tileSize;
+    }
+
+    tileSize = 8;
+
+    while(tileSize < dim) {
+      resultC =  new float[dim*dim];
+      tStart = clock();
+      matmulTilingMulti(left,right,resultC,dim,tileSize);
+      printf("Time taken (reorder + tiling + multi): %.2fs tileSize = %d \n", (double)(clock() - tStart)/CLOCKS_PER_SEC, tileSize);
       for(int i = 0; i < dim*dim; i++) {
           if(resultA[i] != resultC[i]) {
               printf("ffs %d",i);
