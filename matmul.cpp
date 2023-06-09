@@ -2,8 +2,15 @@
 #include <random>
 #include <time.h>
 #include <omp.h>
+//#include "/usr/local/opt/libomp/include/omp.h"
 
 //g++ -O3 -march=native -ffast-math matmul.cpp -o a
+
+//g++ -O3 -march=native -ffast-math -fopenmp matmul.cpp -o a
+
+//g++ -O3 -ffast-math -fopenmp matmul.cpp -o a
+
+// for mac: https://apple.stackexchange.com/questions/99077/how-to-set-gcc-4-8-as-default-gcc-compiler/99157#99157
 
 inline void matmulImplNaive(const float *left, const float *right,
                             float *result, int dim) {
@@ -78,7 +85,7 @@ int main() {
         left[i] = static_cast <float> (rand()) / static_cast <float> (RAND_MAX);
         right[i] = static_cast <float> (rand()) / static_cast <float> (RAND_MAX);
     }
-    clock_t tStart = clock();
+    clock_t tStart;
     matmulImplNaive(left,right,resultA,dim);
     printf("Time taken: %.2fs\n", (double)(clock() - tStart)/CLOCKS_PER_SEC);
 
@@ -107,9 +114,9 @@ int main() {
 
     while(tileSize < dim) {
       resultC =  new float[dim*dim];
-      tStart = clock();
+      double startTime = omp_get_wtime();
       matmulTilingMulti(left,right,resultC,dim,tileSize);
-      printf("Time taken (reorder + tiling + multi): %.2fs tileSize = %d \n", (double)(clock() - tStart)/CLOCKS_PER_SEC, tileSize);
+      printf("Time taken (reorder + tiling + multi): %.2fs tileSize = %d \n", (double)(omp_get_wtime() - startTime), tileSize);
       for(int i = 0; i < dim*dim; i++) {
           if(resultA[i] != resultC[i]) {
               printf("ffs %d",i);
