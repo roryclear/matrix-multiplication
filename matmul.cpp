@@ -53,30 +53,14 @@ inline void matmulTiling(const float *left, const float *right,
   }
 }
 
-inline void matmulTilingMulti(const float *left, const float *right,
-                            float *result, int dim, int tileSize) {
-  #pragma omp parallel for
-  for(int rowTile = 0; rowTile < dim; rowTile+=tileSize) {
-    for (int innerTile = 0; innerTile < dim; innerTile+=tileSize) {
-      for(int colTile = 0; colTile < dim; colTile+=tileSize) {
-        for (int row = rowTile; row < rowTile+tileSize; row++) {
-          for(int inner = innerTile; inner < innerTile+tileSize; inner++) {
-            for (int col = colTile; col < colTile+tileSize; col++) {
-              result[row * dim + col] +=
-                  left[row * dim + inner] * right[inner * dim + col];
-            }
-          }
-        }
-      }
-    }
-  }
-}
-
 
 //1024 4 4 best on xps
 // 256 16 8 best on macbook
-inline void matmulTilingMulti2(const float *left, const float *right,
-                            float *result, int dim, int tileSize, int tileY, int tileZ) {
+inline void matmulTilingMulti(const float *left, const float *right,
+                            float *result, int dim) {
+  int tileSize = 1024;
+  int tileY = 4;
+  int tileZ = 4;
   #pragma omp parallel for
   for(int rowTile = 0; rowTile < dim; rowTile+=tileY) {
     for (int innerTile = 0; innerTile < dim; innerTile+=tileZ) {
@@ -115,73 +99,16 @@ int main() {
     matmulFaster(left,right,resultB,dim);
     printf("Time taken (reorder): %.2fs\n", (double)(clock() - tStart)/CLOCKS_PER_SEC);
 
-    int tileSize = 8;
-
-
-    while(tileSize < dim) {
-      resultC =  new float[dim*dim];
-      tStart = clock();
-      matmulTiling(left,right,resultC,dim,tileSize);
-      printf("Time taken (reorder + tiling): %.2fs tileSize = %d \n", (double)(clock() - tStart)/CLOCKS_PER_SEC, tileSize);
-      for(int i = 0; i < dim*dim; i++) {
-          if(resultA[i] != resultC[i]) {
-              printf("ffs %d",i);
-              return 0;
-          }
-      }
-      tileSize += tileSize;
+    resultC =  new float[dim*dim];
+    double startTime = omp_get_wtime();
+    matmulTilingMulti(left,right,resultC,dim);
+    printf("Time taken (reorder + tiling + multi): %.2fs\n", (double)(omp_get_wtime() - startTime));
+    for(int i = 0; i < dim*dim; i++) {
+        if(resultA[i] != resultC[i]) {
+            printf("ffs %d",i);
+            return 0;
+        }
     }
-
-    tileSize = 8;
-
-    while(tileSize < dim) {
-      resultC =  new float[dim*dim];
-      double startTime = omp_get_wtime();
-      matmulTilingMulti(left,right,resultC,dim,tileSize);
-      printf("Time taken (reorder + tiling + multi): %.2fs tileSize = %d \n", (double)(omp_get_wtime() - startTime), tileSize);
-      for(int i = 0; i < dim*dim; i++) {
-          if(resultA[i] != resultC[i]) {
-              printf("ffs %d",i);
-              return 0;
-          }
-      }
-      tileSize += tileSize;
-    }
-
-    int fx = 0;
-    int fy = 0;
-    int fz = 0;
-    tileSize = 2;
-    int tileY = 2;
-    int tileZ = 2;
-    double lowest = 420;
-    for(tileSize = 256; tileSize < dim; tileSize*=2) {
-      for(tileY = 4; tileY < dim; tileY*=2) {
-        for(tileZ = 4; tileZ < dim; tileZ*=2) {
-          resultC =  new float[dim*dim];
-          double startTime = omp_get_wtime();
-          matmulTilingMulti2(left,right,resultC,dim,tileSize,tileY,tileZ);
-          double timeTaken = omp_get_wtime() - startTime;
-          if(timeTaken < lowest) {
-            lowest = timeTaken;
-            fx = tileSize;
-            fy = tileY;
-            fz = tileZ;
-            printf("fastest = %.2fs\n",lowest);
-          }
-          printf("Time taken (reorder + tiling + multi 2.0): %.2fs tileSize = %d tileY = %d tileZ = %d \n", (double)(timeTaken), tileSize, tileY, tileZ);
-          for(int i = 0; i < dim*dim; i++) {
-              if(resultA[i] != resultC[i]) {
-                  printf("ffs %d",i);
-                  return 0;
-              }
-          }
-      }
-      }
-    }
-    printf("fastest values: %d %d %d -> %.2fs\n",fx,fy,fz,lowest);
-
-
     for(int i = 0; i < dim*dim; i++) {
         if(resultA[i] != resultB[i]) {
             return 0;
