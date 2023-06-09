@@ -72,6 +72,9 @@ inline void matmulTilingMulti(const float *left, const float *right,
   }
 }
 
+
+//1024 4 4 best on xps
+// 256 16 8 best on macbook
 inline void matmulTilingMulti2(const float *left, const float *right,
                             float *result, int dim, int tileSize, int tileY, int tileZ) {
   #pragma omp parallel for
