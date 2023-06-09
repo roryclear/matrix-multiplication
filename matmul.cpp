@@ -72,6 +72,25 @@ inline void matmulTilingMulti(const float *left, const float *right,
   }
 }
 
+inline void matmulTilingMulti2(const float *left, const float *right,
+                            float *result, int dim, int tileSize, int tileY) {
+  #pragma omp parallel for
+  for(int rowTile = 0; rowTile < dim; rowTile+=tileY) {
+    for (int innerTile = 0; innerTile < dim; innerTile+=tileSize) {
+      for(int colTile = 0; colTile < dim; colTile+=tileSize) {
+        for (int row = rowTile; row < rowTile+tileY; row++) {
+          for(int inner = innerTile; inner < innerTile+tileSize; inner++) {
+            for (int col = colTile; col < colTile+tileSize; col++) {
+              result[row * dim + col] +=
+                  left[row * dim + inner] * right[inner * dim + col];
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
 
 
 int main() {
@@ -125,6 +144,35 @@ int main() {
       }
       tileSize += tileSize;
     }
+
+    int fx = 0;
+    int fy = 0;
+    tileSize = 8;
+    int tileY = 1;
+    double lowest = 420;
+    for(tileSize = 4; tileSize < dim; tileSize*=2) {
+      for(tileY = 4; tileY < dim; tileY*=2) {
+        resultC =  new float[dim*dim];
+        double startTime = omp_get_wtime();
+        matmulTilingMulti2(left,right,resultC,dim,tileSize,tileY);
+        double timeTaken = omp_get_wtime() - startTime;
+        if(timeTaken < lowest) {
+          lowest = timeTaken;
+          fx = tileSize;
+          fy = tileY;
+          printf("fastest = %.2fs\n",lowest);
+        }
+        printf("Time taken (reorder + tiling + multi 2.0): %.2fs tileSize = %d tileY = %d \n", (double)(timeTaken), tileSize, tileY);
+        for(int i = 0; i < dim*dim; i++) {
+            if(resultA[i] != resultC[i]) {
+                printf("ffs %d",i);
+                return 0;
+            }
+        }
+      }
+    }
+    printf("fastest values: %d %d -> %.2fs\n",fx,fy,lowest);
+
 
     for(int i = 0; i < dim*dim; i++) {
         if(resultA[i] != resultB[i]) {
