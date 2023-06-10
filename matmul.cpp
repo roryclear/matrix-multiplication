@@ -98,6 +98,7 @@ inline void matmulNew(const float *left, const float *right,
     __m256 *rightm = (__m256*)right;
     __m256 *resultm = (__m256*)result;
 
+    #pragma omp parallel for
     for(int i = 0; i < dim*dim; i++) {
       __m256 lm = _mm256_broadcast_ss(&left[i]);
       for(int j = 0; j < dim; j+=8) {
