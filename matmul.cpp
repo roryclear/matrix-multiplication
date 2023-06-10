@@ -95,33 +95,8 @@ inline void print(const __m256 v)
 
 inline void matmulNew(const float *left, const float *right,
                             float *result, int dim) {
-    __m256 *leftm = (__m256*)left;
     __m256 *rightm = (__m256*)right;
     __m256 *resultm = (__m256*)result;
-
-    float *res2 =  new float[dim*dim];
-
-    print(leftm[0]);
-    printf("\n");
-
-    print(rightm[0]);
-    printf("\n");
-    
-    for(int i = 0; i < 8; i++) {
-      float ans = left[i] * right[i] + result[i];
-      printf("%f * %f + %f = %f\n",left[i],right[i],result[i],ans);
-    }
-
-    printf("\n");
-    //resultm[0] = _mm256_fmadd_ps(leftm[0],rightm[0],resultm[0]);
-    print(resultm[0]);
-
-    printf("\nwhat size is it?\n");
-    for(int i = dim*dim - 8; i < dim*dim; i++) {
-      printf("%f\n",left[i]);
-    }
-    printf("\n");
-    print(leftm[dim*dim/8 - 1]);
 
     for(int i = 0; i < dim*dim; i++) {
       __m256 lm = _mm256_broadcast_ss(&left[i]);
@@ -129,18 +104,6 @@ inline void matmulNew(const float *left, const float *right,
         resultm[(((i / dim) * dim) + j) / 8] = _mm256_fmadd_ps(lm,rightm[(((i % dim) * dim) + j) / 8],resultm[(((i / dim) * dim) + j) / 8]);
       }
     }
-
-
-
-    for(int i = 0; i < dim*dim; i++) {
-      for(int j = 0; j < dim; j++) {
-        res2[(((i / dim) * dim) + j)] += left[i] * right[(((i % dim) * dim) + j)];
-    }
-  }
-
-    printf("results: \n");
-    print(resultm[0]);
-    printf("actual %f \n",res2[0]);
 }
 
 
@@ -185,9 +148,6 @@ int main() {
         }
     }
 
-
-
-
     resultC =  new float[dim*dim];
     startTime = omp_get_wtime();
     matmulNew(left,right,resultC,dim);
@@ -198,21 +158,5 @@ int main() {
             return 0;
         }
     }
-
-    for(int i = 0; i < dim*dim; i++) {
-        if(resultA[i] != resultB[i]) {
-            return 0;
-        }
-    }
-    printf("reorder outputs equal\n");
-
-    for(int i = 0; i < dim*dim; i++) {
-        if(resultA[i] != resultC[i]) {
-            return 0;
-        }
-    }
-
-    printf("tiling outputs equal");
-
     return 0;
 }
