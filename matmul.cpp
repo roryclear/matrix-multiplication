@@ -2,6 +2,7 @@
 #include <random>
 #include <time.h>
 #include <omp.h>
+#include <immintrin.h>
 //#include "/usr/local/opt/libomp/include/omp.h"
 
 //g++ -O3 -march=native -ffast-math matmul.cpp -o a
@@ -78,16 +79,81 @@ inline void matmulTilingMulti(const float *left, const float *right,
   }
 }
 
+
+union U256f {
+    __m256 v;
+    float a[8];
+};
+
+inline void print(const __m256 v)
+{
+    const U256f u = { v };
+
+    for (int i = 0; i < 8; ++i)
+        printf("%f\n",u.a[i]);
+}
+
 inline void matmulNew(const float *left, const float *right,
+                            float *result, int dim) {
+    __m256 *leftm = (__m256*)left;
+    __m256 *rightm = (__m256*)right;
+    __m256 *resultm = (__m256*)result;
+
+    float *res2 =  new float[dim*dim];
+
+    print(leftm[0]);
+    printf("\n");
+
+    print(rightm[0]);
+    printf("\n");
+    
+    for(int i = 0; i < 8; i++) {
+      float ans = left[i] * right[i] + result[i];
+      printf("%f * %f + %f = %f\n",left[i],right[i],result[i],ans);
+    }
+
+    printf("\n");
+    //resultm[0] = _mm256_fmadd_ps(leftm[0],rightm[0],resultm[0]);
+    print(resultm[0]);
+
+    printf("\nwhat size is it?\n");
+    for(int i = dim*dim - 8; i < dim*dim; i++) {
+      printf("%f\n",left[i]);
+    }
+    printf("\n");
+    print(leftm[dim*dim/8 - 1]);
+
+    for(int i = 0; i < dim*dim; i++) {
+      __m256 lm = _mm256_broadcast_ss(&left[i]);
+      for(int j = 0; j < dim; j+=8) {
+        resultm[(((i / dim) * dim) + j) / 8] = _mm256_fmadd_ps(lm,rightm[(((i % dim) * dim) + j) / 8],resultm[(((i / dim) * dim) + j) / 8]);
+      }
+    }
+
+
+
+    for(int i = 0; i < dim*dim; i++) {
+      for(int j = 0; j < dim; j++) {
+        res2[(((i / dim) * dim) + j)] += left[i] * right[(((i % dim) * dim) + j)];
+    }
+  }
+
+    printf("results: \n");
+    print(resultm[0]);
+    printf("actual %f \n",res2[0]);
+}
+
+
+///////////////////////////////////ABOVE
+
+inline void matmulNew2(const float *left, const float *right,
                             float *result, int dim) {
     for(int i = 0; i < dim*dim; i++) {
       for(int j = 0; j < dim; j++) {
         result[(((i / dim) * dim) + j)] += left[i] * right[(((i % dim) * dim) + j)];
+        }
     }
-  }
 }
-
-
 
 int main() {
     const int dim = 2048;
@@ -101,11 +167,11 @@ int main() {
         right[i] = static_cast <float> (rand()) / static_cast <float> (RAND_MAX);
     }
     clock_t tStart;
-    matmulImplNaive(left,right,resultA,dim);
-    printf("Time taken: %.2fs\n", (double)(clock() - tStart)/CLOCKS_PER_SEC);
+    //matmulImplNaive(left,right,resultA,dim);
+    //printf("Time taken: %.2fs\n", (double)(clock() - tStart)/CLOCKS_PER_SEC);
 
     tStart = clock();
-    matmulFaster(left,right,resultB,dim);
+    matmulFaster(left,right,resultA,dim);
     printf("Time taken (reorder): %.2fs\n", (double)(clock() - tStart)/CLOCKS_PER_SEC);
 
     resultC =  new float[dim*dim];
@@ -118,6 +184,8 @@ int main() {
             return 0;
         }
     }
+
+
 
 
     resultC =  new float[dim*dim];
