@@ -78,6 +78,15 @@ inline void matmulTilingMulti(const float *left, const float *right,
   }
 }
 
+inline void matmulNew(const float *left, const float *right,
+                            float *result, int dim) {
+    for(int i = 0; i < dim*dim; i++) {
+      for(int j = 0; j < dim; j++) {
+        result[(((i / dim) * dim) + j)] += left[i] * right[(((i % dim) * dim) + j)];
+    }
+  }
+}
+
 
 
 int main() {
@@ -109,6 +118,19 @@ int main() {
             return 0;
         }
     }
+
+
+    resultC =  new float[dim*dim];
+    startTime = omp_get_wtime();
+    matmulNew(left,right,resultC,dim);
+    printf("Time taken NEW: %.2fs\n", (double)(omp_get_wtime() - startTime));
+    for(int i = 0; i < dim*dim; i++) {
+        if(resultA[i] != resultC[i]) {
+            printf("ffs %d",i);
+            return 0;
+        }
+    }
+
     for(int i = 0; i < dim*dim; i++) {
         if(resultA[i] != resultB[i]) {
             return 0;
