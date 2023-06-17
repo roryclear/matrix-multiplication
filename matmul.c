@@ -11,8 +11,11 @@ int main() {
    printf("Hello, World!");
 
    for(int i = 0; i < N*N; i++) {
-      float a = 1;
-      A[i] = (float)rand()/(float)(RAND_MAX/a);
+      float max = 1;
+      A[i] = (float)rand()/(float)(RAND_MAX/max);
+      B[i] = (float)rand()/(float)(RAND_MAX/max);
+      C[i] = (float)rand()/(float)(RAND_MAX/max);
+
       printf("%f\n",A[i]);
    }
 
