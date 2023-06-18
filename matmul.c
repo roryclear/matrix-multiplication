@@ -70,15 +70,15 @@ int main() {
 
    printf("\n_mm256_broadcast_ss works\n");
 
-   for(int i = 0; i < 64; i++) {
+   int dim = 8;
+
+   for(int i = 0; i < dim*dim; i++) {
       aa[i] = (float)rand()/(float)(RAND_MAX/max);
       bb[i] = (float)rand()/(float)(RAND_MAX/max);
       cc[i] = 0;
       an[i] = 0;
       //printf("%f %f %f %f\n",aa[i],bb[i],cc[i],an[i]);
    }
-
-   int dim = 8;
    
    for(int y = 0; y < dim; y++) {
       for(int k = 0; k < dim; k++) {
@@ -110,7 +110,7 @@ int main() {
       }
    }
 
-   for(int i = 0; i < 64; i++) {
+   for(int i = 0; i < dim*dim; i++) {
       printf("FFS %d %f -> %f\n",i,cc[i],an[i]);
       if(cc[i] != an[i]) {
          printf("\nWRONG avx ! %f -> %f\n",cc[i],an[i]);
