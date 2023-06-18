@@ -42,7 +42,7 @@ int main() {
    __m256 *bbm = (__m256*)bb;
    __m256 *ccm = (__m256*)cc;
    float max =1;
-   for(int i = 0; i < 8; i++) {
+   for(int i = 0; i < 64; i++) {
       aa[i] = (float)rand()/(float)(RAND_MAX/max);
       bb[i] = (float)rand()/(float)(RAND_MAX/max);
       cc[i] = 0;
@@ -79,6 +79,7 @@ int main() {
    }
 
    int dim = 8;
+   
    for(int y = 0; y < dim; y++) {
       for(int k = 0; k < dim; k++) {
          for(int x = 0; x < dim; x++) {
@@ -86,19 +87,35 @@ int main() {
          }
       }
    }
+   
+   printf("DONE\n");
+
+   printf("{");
+   for(int y = 0; y < 8; y++) {
+      printf("{");
+      for(int x = 0; x < 7; x++) {
+         printf("%f,",bb[y*8 + x]);
+      }
+      printf("%f},",bb[y*8 + 7]);
+   }
+   printf("\n\n\n");
 
    int BLOCK = 8;
    for(int y = 0; y < dim; y++) {
       for(int k = 0; k < dim; k++) {
          __m256 ta = _mm256_broadcast_ss(&aa[(y*dim) + k]);
          for(int x = 0; x < dim; x+=8) {
-            ccm[y*dim + x] = _mm256_fmadd_ps(ta, bbm[((x*BLOCK)*dim +k*8)/8 ], ccm[y*dim + x]);
+            for(int i = 0; i < 8; i++) {
+               cc[y*dim + x + i] += aa[(y*dim) + k] * bb[(k * dim) + x + i];
+            }
+            //ccm[y*dim + x] = _mm256_fmadd_ps(ta, bbm[(k*dim) + x], ccm[y*dim + x]); this should be the same???
+            //ccm[(y*dim + x)] = _mm256_fmadd_ps(ta, bbm[((x * dim) + x)], ccm[(y*dim + x)]);
          }
       }
    }
 
-   for(int i = 0; i < 8; i++) {
-      printf("%f -> %f\n",cc[i],an[i]);
+   for(int i = 0; i < 64; i++) {
+      printf("FFS %d %f -> %f\n",i,cc[i],an[i]);
       if(cc[i] != an[i]) {
          printf("\nWRONG avx ! %f -> %f\n",cc[i],an[i]);
          return;
