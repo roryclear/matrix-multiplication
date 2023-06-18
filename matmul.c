@@ -13,7 +13,7 @@
 
 //clang -O2 -march=native gemm.c -lpthread
 
-#define N 8
+#define N 2048
 float A[N*N] __attribute__ ((aligned (64)));
 float B[N*N] __attribute__ ((aligned (64)));
 float C[N*N] __attribute__ ((aligned (64)));
@@ -31,125 +31,55 @@ int main() {
    printf("Hello, World!\n");
 
 
-   //expriment
-   float aa[N*N] __attribute__ ((aligned (64)));
-   float bb[N*N] __attribute__ ((aligned (64)));
-   float cc[N*N] __attribute__ ((aligned (64)));
-
-   float an[N*N] __attribute__ ((aligned (64)));
-
-   __m256 *aam = (__m256*)aa;
-   __m256 *bbm = (__m256*)bb;
-   __m256 *ccm = (__m256*)cc;
    float max =1;
-   for(int i = 0; i < N*N; i++) {
-      aa[i] = (float)rand()/(float)(RAND_MAX/max);
-      bb[i] = (float)rand()/(float)(RAND_MAX/max);
-      cc[i] = 0;
-      an[i] = 0;
-      printf("%f %f %f %f\n",aa[i],bb[i],cc[i],an[i]);
-   }
-
-
-   for(int i = 0; i < 8; i++) {
-      an[i] = (aa[0] * bb[i]) + an[i];
-      an[i] = (aa[0] * bb[i]) + an[i];
-   }
-
-   __m256 taa = _mm256_broadcast_ss(&aa[0]);
-   ccm[0] = _mm256_fmadd_ps(taa, bbm[0], ccm[0]);
-   ccm[0] = _mm256_fmadd_ps(taa, bbm[0], ccm[0]);
-
-   for(int i = 0; i < 8; i++) {
-      printf("%f -> %f\n",cc[i],an[i]);
-      if(cc[i] != an[i]) {
-         printf("\nWRONG\n");
-         return;
-      }
-   }
-
-   printf("\n_mm256_broadcast_ss works\n");
 
    int dim = N;
 
    for(int i = 0; i < dim*dim; i++) {
-      aa[i] = (float)rand()/(float)(RAND_MAX/max);
-      bb[i] = (float)rand()/(float)(RAND_MAX/max);
-      cc[i] = 0;
-      an[i] = 0;
+      A[i] = (float)rand()/(float)(RAND_MAX/max);
+      B[i] = (float)rand()/(float)(RAND_MAX/max);
+      C[i] = 0;
+      ans[i] = 0;
       //printf("%f %f %f %f\n",aa[i],bb[i],cc[i],an[i]);
    }
    
+   clock_t begin = clock();
    for(int y = 0; y < dim; y++) {
       for(int k = 0; k < dim; k++) {
          for(int x = 0; x < dim; x++) {
-            an[y*dim + x] += aa[y*dim + k] * bb[x + k*dim];
+            ans[y*dim + x] += A[y*dim + k] * B[x + k*dim];
          }
       }
    }
+   clock_t end = clock();
+   double time_spent = (double)(end - begin) / CLOCKS_PER_SEC;
+   printf("reordered time spent = %f\n",time_spent);
    
    printf("DONE\n");
 
-   printf("{");
-   for(int y = 0; y < 8; y++) {
-      printf("{");
-      for(int x = 0; x < 7; x++) {
-         printf("%f,",bb[y*8 + x]);
-      }
-      printf("%f},",bb[y*8 + 7]);
-   }
-   printf("\n\n\n");
-
    int BLOCK = 8;
+   begin = clock();
    for(int y = 0; y < dim; y++) {
       for(int k = 0; k < dim; k++) {
-         __m256 ta = _mm256_broadcast_ss(&aa[(y*dim) + k]);
+         __m256 ta = _mm256_broadcast_ss(&A[(y*dim) + k]);
          for(int x = 0; x < dim; x+=8) {
-            ccm[(y*dim + x)/8] = _mm256_fmadd_ps(ta, bbm[((k*dim) + x)/8], ccm[(y*dim + x)/8]);
+            Cm[(y*dim + x)/8] = _mm256_fmadd_ps(ta, Bm[((k*dim) + x)/8], Cm[(y*dim + x)/8]);
          }
       }
    }
+   end = clock();
+   time_spent = (double)(end - begin) / CLOCKS_PER_SEC;
+   printf("reordered + avx time spent = %f\n",time_spent);
 
    for(int i = 0; i < dim*dim; i++) {
-      printf("FFS %d %f -> %f\n",i,cc[i],an[i]);
-      if(cc[i] != an[i]) {
-         printf("\nWRONG avx ! %f -> %f\n",cc[i],an[i]);
+      //printf("FFS %d %f -> %f\n",i,C[i],ans[i]);
+      if(C[i] != ans[i]) {
+         printf("\nWRONG avx ! %f -> %f\n",C[i],ans[i]);
          return;
       }
    } 
 
-   for(int i = 0; i < N*N; i++) {
-      float max = 1;
-      A[i] = (float)rand()/(float)(RAND_MAX/max);
-      B[i] = (float)rand()/(float)(RAND_MAX/max);
-      C[i] = 0;
-   }
-
-   matmul();
-
-   for(int i = 0; i < N*N; i++) {
-      ans[i] = C[i];
-
-      //experiment
-      //B[i] = 1;
-      //A[i] = 1;
-      //
-
-      C[i] = 0;
-   }
-
-   printf("HERE\n");
-
-   matmul2();
-
-   for(int i = 0; i < N*N; i++) {
-      if(ans[i] != C[i]) {
-         //printf("%d WRONG %.20f != %.20f\n",i,ans[i],C[i]);
-      //   return;
-      }
-   }
-
-   printf("\nDONE\n");
+   printf("\nDONE avx\n");
    return 0;
 }
 
