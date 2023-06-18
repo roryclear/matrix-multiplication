@@ -13,7 +13,7 @@
 
 //clang -O2 -march=native gemm.c -lpthread
 
-#define N 2048
+#define N 8
 float A[N*N] __attribute__ ((aligned (64)));
 float B[N*N] __attribute__ ((aligned (64)));
 float C[N*N] __attribute__ ((aligned (64)));
@@ -32,17 +32,17 @@ int main() {
 
 
    //expriment
-   float aa[64] __attribute__ ((aligned (64)));
-   float bb[64] __attribute__ ((aligned (64)));
-   float cc[64] __attribute__ ((aligned (64)));
+   float aa[N*N] __attribute__ ((aligned (64)));
+   float bb[N*N] __attribute__ ((aligned (64)));
+   float cc[N*N] __attribute__ ((aligned (64)));
 
-   float an[64] __attribute__ ((aligned (64)));
+   float an[N*N] __attribute__ ((aligned (64)));
 
    __m256 *aam = (__m256*)aa;
    __m256 *bbm = (__m256*)bb;
    __m256 *ccm = (__m256*)cc;
    float max =1;
-   for(int i = 0; i < 64; i++) {
+   for(int i = 0; i < N*N; i++) {
       aa[i] = (float)rand()/(float)(RAND_MAX/max);
       bb[i] = (float)rand()/(float)(RAND_MAX/max);
       cc[i] = 0;
@@ -70,7 +70,7 @@ int main() {
 
    printf("\n_mm256_broadcast_ss works\n");
 
-   int dim = 8;
+   int dim = N;
 
    for(int i = 0; i < dim*dim; i++) {
       aa[i] = (float)rand()/(float)(RAND_MAX/max);
@@ -146,8 +146,6 @@ int main() {
       if(ans[i] != C[i]) {
          //printf("%d WRONG %.20f != %.20f\n",i,ans[i],C[i]);
       //   return;
-      } else{
-         printf("CORRECT!!!!!!!!!!!! %d\n",i);
       }
    }
 
