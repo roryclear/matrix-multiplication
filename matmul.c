@@ -105,11 +105,7 @@ int main() {
       for(int k = 0; k < dim; k++) {
          __m256 ta = _mm256_broadcast_ss(&aa[(y*dim) + k]);
          for(int x = 0; x < dim; x+=8) {
-            for(int i = 0; i < 8; i++) {
-               cc[y*dim + x + i] += aa[(y*dim) + k] * bb[(k * dim) + x + i];
-            }
-            //ccm[y*dim + x] = _mm256_fmadd_ps(ta, bbm[(k*dim) + x], ccm[y*dim + x]); this should be the same???
-            //ccm[(y*dim + x)] = _mm256_fmadd_ps(ta, bbm[((x * dim) + x)], ccm[(y*dim + x)]);
+            ccm[(y*dim + x)/8] = _mm256_fmadd_ps(ta, bbm[((k*dim) + x)/8], ccm[(y*dim + x)/8]);
          }
       }
    }
