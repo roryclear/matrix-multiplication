@@ -33,9 +33,7 @@ int main() {
 
    float max =1;
 
-   int dim = N;
-
-   for(int i = 0; i < dim*dim; i++) {
+   for(int i = 0; i < N*N; i++) {
       A[i] = (float)rand()/(float)(RAND_MAX/max);
       B[i] = (float)rand()/(float)(RAND_MAX/max);
       C[i] = 0;
@@ -44,10 +42,10 @@ int main() {
    }
    
    clock_t begin = clock();
-   for(int y = 0; y < dim; y++) {
-      for(int k = 0; k < dim; k++) {
-         for(int x = 0; x < dim; x++) {
-            ans[y*dim + x] += A[y*dim + k] * B[x + k*dim];
+   for(int y = 0; y < N; y++) {
+      for(int k = 0; k < N; k++) {
+         for(int x = 0; x < N; x++) {
+            ans[y*N + x] += A[y*N + k] * B[x + k*N];
          }
       }
    }
@@ -59,19 +57,14 @@ int main() {
 
    int BLOCK = 8;
    begin = clock();
-   for(int y = 0; y < dim; y++) {
-      for(int k = 0; k < dim; k++) {
-         __m256 ta = _mm256_broadcast_ss(&A[(y*dim) + k]);
-         for(int x = 0; x < dim; x+=8) {
-            Cm[(y*dim + x)/8] = _mm256_fmadd_ps(ta, Bm[((k*dim) + x)/8], Cm[(y*dim + x)/8]);
-         }
-      }
-   }
+
+   matmulAvx();
+
    end = clock();
    time_spent = (double)(end - begin) / CLOCKS_PER_SEC;
    printf("reordered + avx time spent = %f\n",time_spent);
 
-   for(int i = 0; i < dim*dim; i++) {
+   for(int i = 0; i < N*N; i++) {
       //printf("FFS %d %f -> %f\n",i,C[i],ans[i]);
       if(C[i] != ans[i]) {
          printf("\nWRONG avx ! %f -> %f\n",C[i],ans[i]);
@@ -83,6 +76,17 @@ int main() {
    return 0;
 }
 
+
+void matmulAvx() {
+      for(int y = 0; y < N; y++) {
+         for(int k = 0; k < N; k++) {
+            __m256 ta = _mm256_broadcast_ss(&A[(y*N) + k]);
+            for(int x = 0; x < N; x+=8) {
+               Cm[(y*N + x)/8] = _mm256_fmadd_ps(ta, Bm[((k*N) + x)/8], Cm[(y*N + x)/8]);
+            }
+         }
+      }
+   }
 
 void matmul() {
    
