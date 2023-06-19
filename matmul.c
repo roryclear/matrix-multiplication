@@ -11,7 +11,7 @@
 #include <unistd.h>
 #include <stdatomic.h>
 
-//clang -O2 -march=native gemm.c -lpthread
+//gcc -O2 -march=native matmul.c -o c
 
 #define N 2048
 float A[N*N] __attribute__ ((aligned (64)));
@@ -26,6 +26,17 @@ __m256 *Cm = (__m256*)C;
 float Bf[N*N] __attribute__ ((aligned (64))); //no idea why geohot does this?
 __m256 *Bfm = (__m256*)Bf;
 
+void matmulAvx() {
+      for(int y = 0; y < N; y++) {
+         for(int k = 0; k < N; k++) {
+            __m256 ta = _mm256_broadcast_ss(&A[(y*N) + k]);
+            for(int x = 0; x < N; x+=8) {
+               Cm[(y*N + x)/8] = _mm256_fmadd_ps(ta, Bm[((k*N) + x)/8], Cm[(y*N + x)/8]);
+            }
+         }
+      }
+   }
+
 int main() {
    // printf() displays the string inside quotation
    printf("Hello, World!\n");
@@ -34,10 +45,10 @@ int main() {
    float max =1;
 
    for(int i = 0; i < N*N; i++) {
-      A[i] = (float)rand()/(float)(RAND_MAX/max);
-      B[i] = (float)rand()/(float)(RAND_MAX/max);
-      C[i] = 0;
-      ans[i] = 0;
+       A[i] = (float)rand()/(float)(RAND_MAX/max);
+       B[i] = (float)rand()/(float)(RAND_MAX/max);
+       C[i] = 0;
+       ans[i] = 0;
       //printf("%f %f %f %f\n",aa[i],bb[i],cc[i],an[i]);
    }
    
@@ -68,25 +79,13 @@ int main() {
       //printf("FFS %d %f -> %f\n",i,C[i],ans[i]);
       if(C[i] != ans[i]) {
          printf("\nWRONG avx ! %f -> %f\n",C[i],ans[i]);
-         return;
+         return 0;
       }
    } 
 
    printf("\nDONE avx\n");
    return 0;
 }
-
-
-void matmulAvx() {
-      for(int y = 0; y < N; y++) {
-         for(int k = 0; k < N; k++) {
-            __m256 ta = _mm256_broadcast_ss(&A[(y*N) + k]);
-            for(int x = 0; x < N; x+=8) {
-               Cm[(y*N + x)/8] = _mm256_fmadd_ps(ta, Bm[((k*N) + x)/8], Cm[(y*N + x)/8]);
-            }
-         }
-      }
-   }
 
 void matmul() {
    
@@ -108,43 +107,4 @@ void matmul() {
    }
    */
    
-}
-
-void matmul2() {
-   int sy = 0;
-   int ey = N;
-
-   int BLOCK_X=2;
-   int BLOCK_Y=4;
-   int BLOCK=8;
-
-   for (int y = sy; y < ey; y+=BLOCK_Y) {
-    for (int x = 0; x < N; x+=BLOCK*BLOCK_X) {
-
-      __m256 acc[BLOCK_Y][BLOCK_X] = {};
-      for (int k = 0; k < N; k++) {
-        for (int iy = 0; iy < BLOCK_Y; iy++) {
-          __m256 ta = _mm256_broadcast_ss(&A[(y+iy)*N + k]);
-          for (int ix = 0; ix < BLOCK_X; ix++) {
-            acc[iy][ix] = _mm256_fmadd_ps(ta, Bm[((x+ix*BLOCK)*N + k*8)/8], acc[iy][ix]);
-          }
-        }
-      }
-
-      for (int iy = 0; iy < BLOCK_Y; iy++) {
-        for (int ix = 0; ix < BLOCK_X; ix++) {
-          Cm[((y+iy)*N + x + ix * BLOCK)/8] = acc[iy][ix];
-        }
-      }
-   }
-}
-
-
-
-
-
-
-
-
-
 }
