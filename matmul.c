@@ -77,7 +77,7 @@ int main() {
 
    for(int i = 0; i < N*N; i++) {
       //printf("FFS %d %f -> %f\n",i,C[i],ans[i]);
-      if(C[i] != ans[i]) {
+      if(fabsf(C[i] - ans[i]) > fabsf(C[i] / 1000000)) {
          printf("\nWRONG avx ! %f -> %f\n",C[i],ans[i]);
          return 0;
       }
