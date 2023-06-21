@@ -37,6 +37,37 @@ void matmulAvx() {
       }
    }
 
+void matmulAvxTiled() {
+   int xs = 2;
+   int ys = 4;
+   for(int yt = 0; yt < N; yt+=ys){
+      //printf("yt = %d\n",yt);
+      for(int xt = 0; xt < N; xt+=xs*8){
+         //printf("xt = %d\n",xt);
+         __m256 tile[4][2] = {};
+         for(int y = yt; y < yt+ys; y++) {
+            for(int k = 0; k < N; k++) {
+               __m256 ta = _mm256_broadcast_ss(&A[(y*N) + k]);
+               for(int x = xt; x < xt+xs*8; x+=8) {
+                  tile[(y-yt)][(x-xt)/8] = _mm256_fmadd_ps(ta, Bm[((k*N) + x)/8], tile[(y-yt)][(x-xt)/8]);
+                  //printf("done\n");
+               }
+            }
+         }
+
+      for(int y = 0; y < 4; y++) {
+         for(int x = 0; x < 2*8; x+=8) {
+            //Cm[((yt+y)*N + x + xt)/8] = Cm[((yt+y)*N + x + xt)/8];//tile[0][0];
+            //printf("here %d %d\n",y,x);a
+            Cm[((yt+y)*N + x + xt)/8] = tile[y][x/8];
+            //printf("crash??\n");
+         }
+      }
+      //printf("HERE\n");
+      }
+   }
+}
+
 int main() {
    // printf() displays the string inside quotation
    printf("Hello, World!\n");
@@ -81,7 +112,42 @@ int main() {
          printf("\nWRONG avx ! %f -> %f\n",C[i],ans[i]);
          return 0;
       }
-   } 
+   }
+
+
+   //DOOPLICATION
+   for(int i = 0; i < N*N; i++) {
+       A[i] = (float)rand()/(float)(RAND_MAX/max);
+       B[i] = (float)rand()/(float)(RAND_MAX/max);
+       C[i] = 0;
+       ans[i] = 0;
+      //printf("%f %f %f %f\n",aa[i],bb[i],cc[i],an[i]);
+   }
+
+   for(int y = 0; y < N; y++) {
+      for(int k = 0; k < N; k++) {
+         for(int x = 0; x < N; x++) {
+            ans[y*N + x] += A[y*N + k] * B[x + k*N];
+         }
+      }
+   }
+
+   begin = clock();
+
+   matmulAvxTiled();
+
+   end = clock();
+
+   time_spent = (double)(end - begin) / CLOCKS_PER_SEC;
+   printf("reordered + avx tiled time spent = %f\n",time_spent);
+
+   for(int i = 0; i < N*N; i++) {
+      //printf("FFS %d %f -> %f\n",i,C[i],ans[i]);
+      if(fabsf(C[i] - ans[i]) > fabsf(C[i] / 1000000)) {
+         printf("\nWRONG avx tiled ! %f -> %f\n",C[i],ans[i]);
+         return 0;
+      }
+   }
 
    printf("\nDONE avx\n");
    return 0;
