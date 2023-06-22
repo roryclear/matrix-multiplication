@@ -19,6 +19,7 @@ float A[N*N] __attribute__ ((aligned (64)));
 float B[N*N] __attribute__ ((aligned (64)));
 float C[N*N] __attribute__ ((aligned (64)));
 float ans[N*N] __attribute__ ((aligned (64)));
+atomic_int done = 0;
 
 __m256 *Am = (__m256*)A;
 __m256 *Bm = (__m256*)B;
@@ -74,7 +75,7 @@ void checkAndReset() {
       //printf("FFS %d %f -> %f\n",i,C[i],ans[i]);
       if(fabsf(C[i] - ans[i]) > fabsf(C[i] / 1000000)) {
          printf("\nWRONG! %f -> %f\n",C[i],ans[i]);
-         return 0;
+         return;
       }
    }
 
@@ -84,6 +85,36 @@ void checkAndReset() {
        C[i] = 0;
        ans[i] = 0;
       //printf("%f %f %f %f\n",aa[i],bb[i],cc[i],an[i]);
+   }
+   return;
+}
+
+void matmulSection(start,end) {
+   printf("section %d\n",end);
+   for(int y = start; y < end; y++) {
+      for(int k = 0; k < N; k++) {
+         for(int x = 0; x < N; x++) {
+            C[y*N + x] += A[y*N + k] * B[x + (N * k)];
+         }
+      }
+   }
+   done++;
+}
+
+void *matmulThread(void *n) {
+   int start = (N/4) * (int)(int64_t)n;
+   int end = start + (N/4);
+
+   matmulSection(start,end);
+}
+
+void matmul() {
+   for(int y = 0; y < N; y++) {
+      for(int k = 0; k < N; k++) {
+         for(int x = 0; x < N; x++) {
+            ans[y*N + x] += A[y*N + k] * B[x + (N * k)];
+         }
+      }
    }
 }
 
@@ -100,7 +131,23 @@ int main() {
    checkAndReset();
    matmul();
 
-   int BLOCK = 8;
+   pthread_mutex_t lock = PTHREAD_MUTEX_INITIALIZER;
+   pthread_t threads[4];
+   
+   begin = clock();
+   for(int i = 0; i < 4; i++) {
+      pthread_create(&threads[i], NULL, matmulThread, (void *)(uint64_t)i);
+   }
+   while(done < 4) {
+      usleep(1);
+   }
+   end = clock();
+   time_spent = (double)(end - begin) / CLOCKS_PER_SEC;
+   printf("threaded time spent = %f\n",time_spent);
+   checkAndReset();
+   matmul();
+
+
    begin = clock();
 
    matmulAvx();
@@ -121,15 +168,6 @@ int main() {
    checkAndReset();
    return 0;
 }
-
-void matmul() {
-   for(int y = 0; y < N; y++) {
-      for(int k = 0; k < N; k++) {
-         for(int x = 0; x < N; x++) {
-            ans[y*N + x] += A[y*N + k] * B[x + (N * k)];
-         }
-      }
-   }
    
    /*
    for(int y = 0; y < N; y++) {
@@ -140,5 +178,3 @@ void matmul() {
       }
    }
    */
-   
-}
