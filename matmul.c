@@ -14,6 +14,7 @@
 //gcc -O2 -march=native matmul.c -o c
 
 #define N 2048
+float max =1;
 float A[N*N] __attribute__ ((aligned (64)));
 float B[N*N] __attribute__ ((aligned (64)));
 float C[N*N] __attribute__ ((aligned (64)));
@@ -68,12 +69,14 @@ void matmulAvxTiled() {
    }
 }
 
-int main() {
-   // printf() displays the string inside quotation
-   printf("Hello, World!\n");
-
-
-   float max =1;
+void checkAndReset() {
+   for(int i = 0; i < N*N; i++) {
+      //printf("FFS %d %f -> %f\n",i,C[i],ans[i]);
+      if(fabsf(C[i] - ans[i]) > fabsf(C[i] / 1000000)) {
+         printf("\nWRONG! %f -> %f\n",C[i],ans[i]);
+         return 0;
+      }
+   }
 
    for(int i = 0; i < N*N; i++) {
        A[i] = (float)rand()/(float)(RAND_MAX/max);
@@ -82,20 +85,20 @@ int main() {
        ans[i] = 0;
       //printf("%f %f %f %f\n",aa[i],bb[i],cc[i],an[i]);
    }
+}
+
+int main() {
+   // printf() displays the string inside quotation
+   printf("Hello, World!\n");
    
    clock_t begin = clock();
-   for(int y = 0; y < N; y++) {
-      for(int k = 0; k < N; k++) {
-         for(int x = 0; x < N; x++) {
-            ans[y*N + x] += A[y*N + k] * B[x + k*N];
-         }
-      }
-   }
+   matmul();
    clock_t end = clock();
    double time_spent = (double)(end - begin) / CLOCKS_PER_SEC;
    printf("reordered time spent = %f\n",time_spent);
-   
-   printf("DONE\n");
+
+   checkAndReset();
+   matmul();
 
    int BLOCK = 8;
    begin = clock();
@@ -106,59 +109,24 @@ int main() {
    time_spent = (double)(end - begin) / CLOCKS_PER_SEC;
    printf("reordered + avx time spent = %f\n",time_spent);
 
-   for(int i = 0; i < N*N; i++) {
-      //printf("FFS %d %f -> %f\n",i,C[i],ans[i]);
-      if(fabsf(C[i] - ans[i]) > fabsf(C[i] / 1000000)) {
-         printf("\nWRONG avx ! %f -> %f\n",C[i],ans[i]);
-         return 0;
-      }
-   }
-
-
-   //DOOPLICATION
-   for(int i = 0; i < N*N; i++) {
-       A[i] = (float)rand()/(float)(RAND_MAX/max);
-       B[i] = (float)rand()/(float)(RAND_MAX/max);
-       C[i] = 0;
-       ans[i] = 0;
-      //printf("%f %f %f %f\n",aa[i],bb[i],cc[i],an[i]);
-   }
-
-   for(int y = 0; y < N; y++) {
-      for(int k = 0; k < N; k++) {
-         for(int x = 0; x < N; x++) {
-            ans[y*N + x] += A[y*N + k] * B[x + k*N];
-         }
-      }
-   }
+   checkAndReset();
+   matmul();
 
    begin = clock();
-
    matmulAvxTiled();
-
    end = clock();
 
    time_spent = (double)(end - begin) / CLOCKS_PER_SEC;
    printf("reordered + avx tiled time spent = %f\n",time_spent);
-
-   for(int i = 0; i < N*N; i++) {
-      //printf("FFS %d %f -> %f\n",i,C[i],ans[i]);
-      if(fabsf(C[i] - ans[i]) > fabsf(C[i] / 1000000)) {
-         printf("\nWRONG avx tiled ! %f -> %f\n",C[i],ans[i]);
-         return 0;
-      }
-   }
-
-   printf("\nDONE avx\n");
+   checkAndReset();
    return 0;
 }
 
 void matmul() {
-   
    for(int y = 0; y < N; y++) {
       for(int k = 0; k < N; k++) {
          for(int x = 0; x < N; x++) {
-            C[y*N + x] += A[y*N + k] * B[x + (N * k)];
+            ans[y*N + x] += A[y*N + k] * B[x + (N * k)];
          }
       }
    }
