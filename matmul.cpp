@@ -15,15 +15,15 @@
 
 inline void matmulImplNaive(const float *left, const float *right,
                             float *result, int dim) {
-int rows = dim;
-int columns = dim;
-int inners = dim;
-  for (int row = 0; row < rows; row++) {
-    for (int col = 0; col < columns; col++) {
-      for (int inner = 0; inner < inners; inner++) {
-        result[row * columns + col] +=
-            left[row * columns + inner] * right[inner * columns + col];
-} } } }
+  for (int row = 0; row < dim; row++) {
+    for (int col = 0; col < dim; col++) {
+      for (int inner = 0; inner < dim; inner++) {
+        result[row * dim + col] +=
+            left[row * dim + inner] * right[inner * dim + col];
+      } 
+    } 
+  } 
+}
 
 
 inline void matmulFaster(const float *left, const float *right,
@@ -33,16 +33,22 @@ inline void matmulFaster(const float *left, const float *right,
       for (int col = 0; col < dim; col++) {
         result[row * dim + col] +=
             left[row * dim + inner] * right[inner * dim + col];
-} } } }
+      } 
+    } 
+  } 
+}
 
 
 inline void matmulTiling(const float *left, const float *right,
-                            float *result, int dim, int tileSize) {
-  for(int rowTile = 0; rowTile < dim; rowTile+=tileSize) {
-    for (int innerTile = 0; innerTile < dim; innerTile+=tileSize) {
+                            float *result, int dim) {
+  int tileSize = 256;
+  int tileY = 16;
+  int tileZ = 8;
+  for(int rowTile = 0; rowTile < dim; rowTile+=tileY) {
+    for (int innerTile = 0; innerTile < dim; innerTile+=tileZ) {
       for(int colTile = 0; colTile < dim; colTile+=tileSize) {
-        for (int row = rowTile; row < rowTile+tileSize; row++) {
-          for(int inner = innerTile; inner < innerTile+tileSize; inner++) {
+        for (int row = rowTile; row < rowTile+tileY; row++) {
+          for(int inner = innerTile; inner < innerTile+tileZ; inner++) {
             for (int col = colTile; col < colTile+tileSize; col++) {
               result[row * dim + col] +=
                   left[row * dim + inner] * right[inner * dim + col];
@@ -59,8 +65,8 @@ inline void matmulTiling(const float *left, const float *right,
 // 256 16 8 best on macbook
 inline void matmulTilingMulti(const float *left, const float *right,
                             float *result, int dim) {
-  int tileSize = 1024;
-  int tileY = 4;
+  int tileSize = 256;
+  int tileY = 16;
   int tileZ = 4;
   #pragma omp parallel for
   for(int rowTile = 0; rowTile < dim; rowTile+=tileY) {
@@ -131,15 +137,27 @@ int main() {
         right[i] = static_cast <float> (rand()) / static_cast <float> (RAND_MAX);
     }
     clock_t tStart;
-    //matmulImplNaive(left,right,resultA,dim);
-    //printf("Time taken: %.2fs\n", (double)(clock() - tStart)/CLOCKS_PER_SEC);
+    matmulImplNaive(left,right,resultA,dim);
+    printf("Time taken: %.2fs\n", (double)(clock() - tStart)/CLOCKS_PER_SEC);
 
+    resultA =  new float[dim*dim];
     tStart = clock();
     matmulFaster(left,right,resultA,dim);
     printf("Time taken (reorder): %.2fs\n", (double)(clock() - tStart)/CLOCKS_PER_SEC);
 
     resultC =  new float[dim*dim];
     double startTime = omp_get_wtime();
+    matmulTiling(left,right,resultC,dim);
+    printf("Time taken (reorder + tiling): %.2fs\n", (double)(omp_get_wtime() - startTime));
+    for(int i = 0; i < dim*dim; i++) {
+        if(resultA[i] != resultC[i]) {
+            printf("ffs %d",i);
+            return 0;
+        }
+    }
+
+    resultC =  new float[dim*dim];
+    startTime = omp_get_wtime();
     matmulTilingMulti(left,right,resultC,dim);
     printf("Time taken (reorder + tiling + multi): %.2fs\n", (double)(omp_get_wtime() - startTime));
     for(int i = 0; i < dim*dim; i++) {
@@ -148,7 +166,7 @@ int main() {
             return 0;
         }
     }
-
+    /*
     resultC =  new float[dim*dim];
     startTime = omp_get_wtime();
     matmulNew(left,right,resultC,dim);
@@ -159,5 +177,6 @@ int main() {
             return 0;
         }
     }
+    */
     return 0;
 }
