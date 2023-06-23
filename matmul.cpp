@@ -30,9 +30,10 @@ inline void matmulFaster(const float *left, const float *right,
                             float *result, int dim) {
   for (int row = 0; row < dim; row++) {
     for (int inner = 0; inner < dim; inner++) {
+      float lnum = left[row * dim + inner];
       for (int col = 0; col < dim; col++) {
         result[row * dim + col] +=
-            left[row * dim + inner] * right[inner * dim + col];
+            lnum * right[inner * dim + col];
       } 
     } 
   } 
