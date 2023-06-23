@@ -48,11 +48,11 @@ inline void matmulTiling(const float *left, const float *right,
   for(int yt = 0; yt < dim; yt+=ys) {
     for (int kt = 0; kt < dim; kt+=ks) {
       for(int xt = 0; xt < dim; xt+=xs) {
-        for (int row = yt; row < yt+ys; row++) {
-          for(int inner = kt; inner < kt+ks; inner++) {
-            for (int col = xt; col < xt+xs; col++) {
-              result[row * dim + col] +=
-                  left[row * dim + inner] * right[inner * dim + col];
+        for (int y = yt; y < yt+ys; y++) {
+          for(int k = kt; k < kt+ks; k++) {
+            for (int x = xt; x < xt+xs; x++) {
+              result[y * dim + x] +=
+                  left[y * dim + k] * right[k * dim + x];
             }
           }
         }
@@ -73,11 +73,11 @@ inline void matmulTilingMulti(const float *left, const float *right,
   for(int yt = 0; yt < dim; yt+=ys) {
     for (int kt = 0; kt < dim; kt+=ks) {
       for(int xt = 0; xt < dim; xt+=xs) {
-        for (int row = yt; row < yt+ys; row++) {
-          for(int inner = kt; inner < kt+ks; inner++) {
-            for (int col = xt; col < xt+xs; col++) {
-              result[row * dim + col] +=
-                  left[row * dim + inner] * right[inner * dim + col];
+        for (int y = yt; y < yt+ys; y++) {
+          for(int k = kt; k < kt+ks; k++) {
+            for (int x = xt; x < xt+xs; x++) {
+              result[y * dim + x] +=
+                  left[y * dim + k] * right[k * dim + x];
             }
           }
         }
