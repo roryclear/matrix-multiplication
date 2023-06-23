@@ -42,15 +42,15 @@ inline void matmulFaster(const float *left, const float *right,
 
 inline void matmulTiling(const float *left, const float *right,
                             float *result, int dim) {
-  int tileSize = 256;
-  int tileY = 16;
-  int tileZ = 8;
-  for(int rowTile = 0; rowTile < dim; rowTile+=tileY) {
-    for (int innerTile = 0; innerTile < dim; innerTile+=tileZ) {
-      for(int colTile = 0; colTile < dim; colTile+=tileSize) {
-        for (int row = rowTile; row < rowTile+tileY; row++) {
-          for(int inner = innerTile; inner < innerTile+tileZ; inner++) {
-            for (int col = colTile; col < colTile+tileSize; col++) {
+  int xs = 256;
+  int ys = 16;
+  int ks = 8;
+  for(int yt = 0; yt < dim; yt+=ys) {
+    for (int kt = 0; kt < dim; kt+=ks) {
+      for(int xt = 0; xt < dim; xt+=xs) {
+        for (int row = yt; row < yt+ys; row++) {
+          for(int inner = kt; inner < kt+ks; inner++) {
+            for (int col = xt; col < xt+xs; col++) {
               result[row * dim + col] +=
                   left[row * dim + inner] * right[inner * dim + col];
             }
@@ -66,16 +66,16 @@ inline void matmulTiling(const float *left, const float *right,
 // 256 16 8 best on macbook
 inline void matmulTilingMulti(const float *left, const float *right,
                             float *result, int dim) {
-  int tileSize = 256;
-  int tileY = 16;
-  int tileZ = 4;
+  int xs = 256;
+  int ys = 16;
+  int ks = 4;
   #pragma omp parallel for
-  for(int rowTile = 0; rowTile < dim; rowTile+=tileY) {
-    for (int innerTile = 0; innerTile < dim; innerTile+=tileZ) {
-      for(int colTile = 0; colTile < dim; colTile+=tileSize) {
-        for (int row = rowTile; row < rowTile+tileY; row++) {
-          for(int inner = innerTile; inner < innerTile+tileZ; inner++) {
-            for (int col = colTile; col < colTile+tileSize; col++) {
+  for(int yt = 0; yt < dim; yt+=ys) {
+    for (int kt = 0; kt < dim; kt+=ks) {
+      for(int xt = 0; xt < dim; xt+=xs) {
+        for (int row = yt; row < yt+ys; row++) {
+          for(int inner = kt; inner < kt+ks; inner++) {
+            for (int col = xt; col < xt+xs; col++) {
               result[row * dim + col] +=
                   left[row * dim + inner] * right[inner * dim + col];
             }
