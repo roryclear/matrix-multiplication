@@ -15,11 +15,11 @@
 
 inline void matmulImplNaive(const float *left, const float *right,
                             float *result, int dim) {
-  for (int row = 0; row < dim; row++) {
-    for (int col = 0; col < dim; col++) {
-      for (int inner = 0; inner < dim; inner++) {
-        result[row * dim + col] +=
-            left[row * dim + inner] * right[inner * dim + col];
+  for (int y = 0; y < dim; y++) {
+    for (int x = 0; x < dim; x++) {
+      for (int k = 0; k < dim; k++) {
+        result[y * dim + x] +=
+            left[y * dim + k] * right[k * dim + x];
       } 
     } 
   } 
@@ -28,12 +28,12 @@ inline void matmulImplNaive(const float *left, const float *right,
 
 inline void matmulFaster(const float *left, const float *right,
                             float *result, int dim) {
-  for (int row = 0; row < dim; row++) {
-    for (int inner = 0; inner < dim; inner++) {
-      float lnum = left[row * dim + inner];
-      for (int col = 0; col < dim; col++) {
-        result[row * dim + col] +=
-            lnum * right[inner * dim + col];
+  for (int y = 0; y < dim; y++) {
+    for (int k = 0; k < dim; k++) {
+      float lnum = left[y * dim + k];
+      for (int x = 0; x < dim; x++) {
+        result[y * dim + x] +=
+            lnum * right[k * dim + x];
       } 
     } 
   } 
