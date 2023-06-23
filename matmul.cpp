@@ -50,9 +50,10 @@ inline void matmulTiling(const float *left, const float *right,
       for(int xt = 0; xt < dim; xt+=xs) {
         for (int y = yt; y < yt+ys; y++) {
           for(int k = kt; k < kt+ks; k++) {
+            float lnum = left[y * dim + k];
             for (int x = xt; x < xt+xs; x++) {
               result[y * dim + x] +=
-                  left[y * dim + k] * right[k * dim + x];
+                  lnum * right[k * dim + x];
             }
           }
         }
@@ -75,9 +76,10 @@ inline void matmulTilingMulti(const float *left, const float *right,
       for(int xt = 0; xt < dim; xt+=xs) {
         for (int y = yt; y < yt+ys; y++) {
           for(int k = kt; k < kt+ks; k++) {
+            float lnum = left[y * dim + k];
             for (int x = xt; x < xt+xs; x++) {
               result[y * dim + x] +=
-                  left[y * dim + k] * right[k * dim + x];
+                  lnum * right[k * dim + x];
             }
           }
         }
