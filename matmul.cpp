@@ -60,6 +60,28 @@ inline void matmulSwizzle(const float *left, const float *right,
   } 
 }
 
+inline void matmulSwizzleMulti(const float *left, const float *right,
+                            float *result, int dim) {
+  #pragma omp parallel for
+  for (int y = 0; y < dim; y+=4) {
+    for (int x = 0; x < dim; x+=2) {
+      float acc[4][2] = {};
+      for (int k = 0; k < dim; k++) {
+        for(int iy = 0; iy < 4; iy++) {
+          acc[iy][0] += left[(y+iy)*dim + k] * right[x*dim + k];
+          acc[iy][1] += left[(y+iy)*dim + k] * right[(x+1)*dim + k];
+        }
+      }
+
+      for(int iy = 0; iy < 4; iy++) {
+        result[(y+iy)*dim + x] = acc[iy][0];
+        result[(y+iy)*dim + x + 1] = acc[iy][1];
+      }
+
+    } 
+  } 
+}
+
 
 inline void matmulTiling(const float *left, const float *right,
                             float *result, int dim) {
@@ -181,6 +203,24 @@ int main() {
         }
     }
 
+    for(int y = 0; y < dim; y++) {
+      for(int x = 0; x < dim; x++) {
+        rightr[y * dim + x] = right[x * dim + y];
+      }
+    }
+
+    resultC =  new float[dim*dim];
+    startTime = omp_get_wtime();
+    matmulSwizzle(left,rightr,resultC,dim);
+    printf("Time taken (swizzle): %.2fs\n", (double)(omp_get_wtime() - startTime));
+    for(int i = 0; i < dim*dim; i++) {
+        if(abs(resultC[i] - resultA[i]) > abs(resultA[i]*0.00001)) {
+            float diff = abs(resultC[i] - resultA[i]);
+            printf("ffs %d %f -> %f %f\n",i,resultC[i],resultA[i],diff);
+            return 0;
+        }
+    }
+
     resultC =  new float[dim*dim];
     startTime = omp_get_wtime();
     matmulTilingMulti(left,right,resultC,dim);
@@ -192,16 +232,10 @@ int main() {
         }
     }
 
-    for(int y = 0; y < dim; y++) {
-      for(int x = 0; x < dim; x++) {
-        rightr[y * dim + x] = right[x * dim + y];
-      }
-    }
-
     resultC =  new float[dim*dim];
     startTime = omp_get_wtime();
-    matmulSwizzle(left,rightr,resultC,dim);
-    printf("Time taken (swizzle): %.2fs\n", (double)(omp_get_wtime() - startTime));
+    matmulSwizzleMulti(left,rightr,resultC,dim);
+    printf("Time taken (swizzle + multi): %.4fs\n", (double)(omp_get_wtime() - startTime));
     for(int i = 0; i < dim*dim; i++) {
         if(abs(resultC[i] - resultA[i]) > abs(resultA[i]*0.00001)) {
             float diff = abs(resultC[i] - resultA[i]);
