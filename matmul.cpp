@@ -46,14 +46,16 @@ inline void matmulSwizzle(const float *left, const float *right,
       float acc[4][2] = {};
       for (int k = 0; k < dim; k++) {
         for(int iy = 0; iy < 4; iy++) {
-          acc[iy][0] += left[(y+iy)*dim + k] * right[x*dim + k];
-          acc[iy][1] += left[(y+iy)*dim + k] * right[(x+1)*dim + k];
+          for(int ix = 0; ix < 2; ix++) {
+              acc[iy][ix] += left[(y+iy)*dim + k] * right[(x+ix)*dim + k];
+          }
         }
       }
 
       for(int iy = 0; iy < 4; iy++) {
-        result[(y+iy)*dim + x] = acc[iy][0];
-        result[(y+iy)*dim + x + 1] = acc[iy][1];
+        for(int ix = 0; ix < 2; ix++) {
+          result[(y+iy)*dim + x + ix] = acc[iy][ix];
+        }
       }
 
     } 
@@ -68,14 +70,17 @@ inline void matmulSwizzleMulti(const float *left, const float *right,
       float acc[4][2] = {};
       for (int k = 0; k < dim; k++) {
         for(int iy = 0; iy < 4; iy++) {
-          acc[iy][0] += left[(y+iy)*dim + k] * right[x*dim + k];
-          acc[iy][1] += left[(y+iy)*dim + k] * right[(x+1)*dim + k];
+          for(int ix = 0; ix < 2; ix++) 
+          {
+            acc[iy][ix] += left[(y+iy)*dim + k] * right[(x+ix)*dim + k];
+          }
         }
       }
 
       for(int iy = 0; iy < 4; iy++) {
-        result[(y+iy)*dim + x] = acc[iy][0];
-        result[(y+iy)*dim + x + 1] = acc[iy][1];
+        for(int ix = 0; ix < 2; ix++) {
+          result[(y+iy)*dim + x + ix] = acc[iy][ix];
+        }
       }
 
     } 
@@ -184,8 +189,8 @@ int main() {
         right[i] = static_cast <float> (rand()) / static_cast <float> (RAND_MAX);
     }
     clock_t tStart;
-    matmulImplNaive(left,right,resultA,dim);
-    printf("Time taken: %.2fs\n", (double)(clock() - tStart)/CLOCKS_PER_SEC);
+    //matmulImplNaive(left,right,resultA,dim);
+    //printf("Time taken: %.2fs\n", (double)(clock() - tStart)/CLOCKS_PER_SEC);
 
     resultA =  new float[dim*dim];
     tStart = clock();
