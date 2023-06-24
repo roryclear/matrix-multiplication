@@ -13,6 +13,9 @@
 
 // for mac: https://apple.stackexchange.com/questions/99077/how-to-set-gcc-4-8-as-default-gcc-compiler/99157#99157
 
+#define by 4
+#define bx 4
+
 inline void matmulImplNaive(const float *left, const float *right,
                             float *result, int dim) {
   for (int y = 0; y < dim; y++) {
@@ -41,19 +44,19 @@ inline void matmulFaster(const float *left, const float *right,
 
 inline void matmulSwizzle(const float *left, const float *right,
                             float *result, int dim) {
-  for (int y = 0; y < dim; y+=4) {
-    for (int x = 0; x < dim; x+=2) {
-      float acc[4][2] = {};
+  for (int y = 0; y < dim; y+=by) {
+    for (int x = 0; x < dim; x+=bx) {
+      float acc[by][bx] = {};
       for (int k = 0; k < dim; k++) {
-        for(int iy = 0; iy < 4; iy++) {
-          for(int ix = 0; ix < 2; ix++) {
+        for(int iy = 0; iy < by; iy++) {
+          for(int ix = 0; ix < bx; ix++) {
               acc[iy][ix] += left[(y+iy)*dim + k] * right[(x+ix)*dim + k];
           }
         }
       }
 
-      for(int iy = 0; iy < 4; iy++) {
-        for(int ix = 0; ix < 2; ix++) {
+      for(int iy = 0; iy < by; iy++) {
+        for(int ix = 0; ix < bx; ix++) {
           result[(y+iy)*dim + x + ix] = acc[iy][ix];
         }
       }
@@ -65,20 +68,20 @@ inline void matmulSwizzle(const float *left, const float *right,
 inline void matmulSwizzleMulti(const float *left, const float *right,
                             float *result, int dim) {
   #pragma omp parallel for
-  for (int y = 0; y < dim; y+=4) {
-    for (int x = 0; x < dim; x+=2) {
-      float acc[4][2] = {};
+  for (int y = 0; y < dim; y+=by) {
+    for (int x = 0; x < dim; x+=bx) {
+      float acc[by][bx] = {};
       for (int k = 0; k < dim; k++) {
-        for(int iy = 0; iy < 4; iy++) {
-          for(int ix = 0; ix < 2; ix++) 
+        for(int iy = 0; iy < by; iy++) {
+          for(int ix = 0; ix < bx; ix++) 
           {
             acc[iy][ix] += left[(y+iy)*dim + k] * right[(x+ix)*dim + k];
           }
         }
       }
 
-      for(int iy = 0; iy < 4; iy++) {
-        for(int ix = 0; ix < 2; ix++) {
+      for(int iy = 0; iy < by; iy++) {
+        for(int ix = 0; ix < bx; ix++) {
           result[(y+iy)*dim + x + ix] = acc[iy][ix];
         }
       }
@@ -189,8 +192,8 @@ int main() {
         right[i] = static_cast <float> (rand()) / static_cast <float> (RAND_MAX);
     }
     clock_t tStart;
-    //matmulImplNaive(left,right,resultA,dim);
-    //printf("Time taken: %.2fs\n", (double)(clock() - tStart)/CLOCKS_PER_SEC);
+    matmulImplNaive(left,right,resultA,dim);
+    printf("Time taken: %.2fs\n", (double)(clock() - tStart)/CLOCKS_PER_SEC);
 
     resultA =  new float[dim*dim];
     tStart = clock();
