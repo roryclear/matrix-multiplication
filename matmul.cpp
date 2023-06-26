@@ -91,6 +91,31 @@ inline void matmulSwizzleAvx(const float *left, const float *right,
   } 
 }
 
+inline void matmulSwizzleAvxMulti(const float *left, const float *right,
+                            float *result, int dim) {
+  __m256 *rightm = (__m256*)right;
+  __m256 *resultm = (__m256*)result;
+  #pragma omp parallel for
+  for (int y = 0; y < dim; y+=by) {
+    for (int x = 0; x < dim; x+=bx*8) {
+      __m256 accm[by][bx] = {};
+      for (int k = 0; k < dim; k++) {
+        for(int iy = 0; iy < by; iy++) {
+          __m256 am = _mm256_broadcast_ss(&left[(y+iy)*dim + k]);
+          for(int ix = 0; ix < bx; ix++) {
+            accm[iy][ix] = _mm256_fmadd_ps(am,rightm[((x + ix * 8)*dim + k*8)/8],accm[iy][ix]);
+          }
+        }
+      }
+      for(int iy = 0; iy < by; iy++) {
+        for(int ix = 0; ix < bx; ix++) {
+          resultm[((y+iy)*dim + x + ix * 8)/8] = accm[iy][ix];
+        }
+      }
+    } 
+  } 
+}
+
 inline void matmulSwizzleMulti(const float *left, const float *right,
                             float *result, int dim) {
   #pragma omp parallel for
@@ -239,8 +264,8 @@ int main() {
 
 
   clock_t tStart;
-  //matmulImplNaive(left,right,resultA,dim);
-  //printf("Time taken: %.2fs\n", (double)(clock() - tStart)/CLOCKS_PER_SEC);
+  matmulImplNaive(left,right,resultA,dim);
+  printf("Time taken: %.2fs\n", (double)(clock() - tStart)/CLOCKS_PER_SEC);
 
   resultA =  new float[dim*dim];
   tStart = clock();
@@ -315,6 +340,18 @@ int main() {
   startTime = omp_get_wtime();
   matmulSwizzleAvx(left,rightr2,resultC,dim);
   printf("Time taken (swizzle + avx): %.5fs\n", (double)(omp_get_wtime() - startTime));
+  for(int i = 0; i < dim*dim; i++) {
+      if(abs(resultC[i] - resultA[i]) > abs(resultA[i]*0.00001)) {
+          float diff = abs(resultC[i] - resultA[i]);
+          printf("ffs %d %f -> %f %f\n",i,resultC[i],resultA[i],diff,rightr2);
+          return 0;
+      }
+  }
+
+  resultC =  new float[dim*dim];
+  startTime = omp_get_wtime();
+  matmulSwizzleAvxMulti(left,rightr2,resultC,dim);
+  printf("Time taken (swizzle + avx + multi): %.5fs\n", (double)(omp_get_wtime() - startTime));
   for(int i = 0; i < dim*dim; i++) {
       if(abs(resultC[i] - resultA[i]) > abs(resultA[i]*0.00001)) {
           float diff = abs(resultC[i] - resultA[i]);
