@@ -6,9 +6,6 @@ import struct
 
 def matmul(a,b):
     aRows = a.shape[0]
-    aCols = a.shape[1]
-    bRows = b.shape[0]
-    bCols = b.shape[1]
     device = Metal.MTLCreateSystemDefaultDevice()
     mtl_queue = device.newCommandQueue()
     command_buffer = mtl_queue.commandBuffer()
@@ -50,17 +47,12 @@ def matmul(a,b):
     m[:] = bytes(b)
 
     aRows = np.int32(aRows)
-    aCols = np.int32(aCols)
-    bCols = np.int32(bCols)
     aRows_buffer = device.newBufferWithLength_options_(4 ,1)
-    aCols_buffer = device.newBufferWithLength_options_(4 ,1)
-    bCols_buffer = device.newBufferWithLength_options_(4 ,1)
+
     for i in range(4):
         aRows_buffer.contents().__setitem__(i,aRows.tobytes()[i].to_bytes(1,'big'))
-        aCols_buffer.contents().__setitem__(i,aCols.tobytes()[i].to_bytes(1,'big'))
-        bCols_buffer.contents().__setitem__(i,bCols.tobytes()[i].to_bytes(1,'big'))
 
-    res = np.empty([aRows, bCols]).astype(np.float32).flatten()
+    res = np.empty([aRows, aRows]).astype(np.float32).flatten()
     res_buffer = device.newBufferWithLength_options_(res.nbytes ,1)
 
     encoder.setBuffer_offset_atIndex_(a_buffer, 0, 0)
@@ -68,9 +60,9 @@ def matmul(a,b):
     encoder.setBuffer_offset_atIndex_(aRows_buffer, 0, 2)
     encoder.setBuffer_offset_atIndex_(res_buffer, 0, 3)
     threadGroupSize = pipeline_state.maxTotalThreadsPerThreadgroup()
-    if aRows*bCols < threadGroupSize:
-        threadGroupSize = aRows*bCols
-    encoder.dispatchThreads_threadsPerThreadgroup_(Metal.MTLSizeMake(aRows*bCols,1,1), Metal.MTLSizeMake(threadGroupSize,1,1))
+    if aRows*aRows < threadGroupSize:
+        threadGroupSize = aRows*aRows
+    encoder.dispatchThreads_threadsPerThreadgroup_(Metal.MTLSizeMake(aRows*aRows,1,1), Metal.MTLSizeMake(threadGroupSize,1,1))
     encoder.endEncoding()
     command_buffer.commit()
     command_buffer.waitUntilCompleted()
