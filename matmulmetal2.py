@@ -17,10 +17,10 @@ def matmul(a,b):
                         device float *b,
                         device int& dim,
                         device float *res,
-    uint index [[thread_position_in_grid]])
+    uint3 index [[thread_position_in_grid]])
     {{     
-          int row = index / dim;
-          int col = index % dim;
+          int row = index.y;
+          int col = index.x; 
           float total = 0;
           if(row < dim && col < dim) 
           {{
@@ -62,7 +62,7 @@ def matmul(a,b):
     threadGroupSize = pipeline_state.maxTotalThreadsPerThreadgroup()
     if dim*dim < threadGroupSize:
         threadGroupSize = dim*dim
-    encoder.dispatchThreads_threadsPerThreadgroup_(Metal.MTLSizeMake(dim*dim,1,1), Metal.MTLSizeMake(threadGroupSize,1,1))
+    encoder.dispatchThreads_threadsPerThreadgroup_(Metal.MTLSizeMake(dim,dim,1), Metal.MTLSizeMake(threadGroupSize,1,1))
     encoder.endEncoding()
     command_buffer.commit()
     command_buffer.waitUntilCompleted()
