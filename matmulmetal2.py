@@ -19,17 +19,14 @@ def matmul(a,b):
                         device float *res,
     uint3 index [[thread_position_in_grid]])
     {{     
-          int row = index.y;
-          int col = index.x; 
-          float total = 0;
-          if(row < dim && col < dim) 
-          {{
-            for(int i = 0; i < dim; i++)
-            {{
-              total += a[row * dim + i] * b[col + i * dim];
+        for(int y = 0; y < dim; y++) {{
+            for(int k = 0; k < dim; k++) {{
+                float left = a[y*dim + k];
+                for(int x = 0; x < dim; x++) {{
+                    res[y*dim + x] += left * b[x + k*dim]; 
+                }}
             }}
-            res[row * dim + col] = total;
-          }}
+        }}
     }}"""
 
     options = Metal.MTLCompileOptions.alloc().init()
@@ -62,7 +59,7 @@ def matmul(a,b):
     threadGroupSize = pipeline_state.maxTotalThreadsPerThreadgroup()
     if dim*dim < threadGroupSize:
         threadGroupSize = dim*dim
-    encoder.dispatchThreads_threadsPerThreadgroup_(Metal.MTLSizeMake(dim,dim,1), Metal.MTLSizeMake(threadGroupSize,1,1))
+    encoder.dispatchThreads_threadsPerThreadgroup_(Metal.MTLSizeMake(1,1,1), Metal.MTLSizeMake(1,1,1)) #1thread for now?
     encoder.endEncoding()
     command_buffer.commit()
     command_buffer.waitUntilCompleted()

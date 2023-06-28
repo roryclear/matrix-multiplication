@@ -3,7 +3,7 @@ import matmulmetal2 as mmm
 import matmulopencl as mmo
 import time
 
-length = 2048
+length = 512
 
 a = np.random.rand(length,length).astype(np.float32)
 b = np.random.rand(length,length).astype(np.float32)
