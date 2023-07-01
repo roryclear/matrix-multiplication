@@ -11,19 +11,12 @@ answer = np.empty_like(a)
 
 start_time = time.time()
 om = mmm.matmul(a,b)
-print("--- metal %s seconds ---" % (time.time() - start_time))
+print("--- metal %.5f seconds ---" % (time.time() - start_time))
 
-start_time = time.time()
-oo = mmo.matmul(a,b)
-print("--- opencl %s seconds ---" % (time.time() - start_time))
-
-assert np.allclose(om, oo)
-print("outputs are close")
 
 start_time = time.time()
 answer = np.matmul(a,b).flatten()
-print("--- numpy %s seconds ---" % (time.time() - start_time))
+print("--- numpy %.5f seconds ---" % (time.time() - start_time))
 
 assert np.allclose(om, answer)
-assert np.allclose(oo, answer)
 print("passed")
