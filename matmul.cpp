@@ -17,7 +17,7 @@
 #define by 4
 #define bx 2
 
-const int dim = 1024;
+const int dim = 2048;
 
 float *left =  new float[dim*dim];
 float *right =  new float[dim*dim];
@@ -31,21 +31,19 @@ inline void matmulImplNaive() {
   for (int y = 0; y < dim; y++) {
     for (int x = 0; x < dim; x++) {
       for (int k = 0; k < dim; k++) {
-        resultA[y * dim + x] +=
-            left[y * dim + k] * right[k * dim + x];
+        resultA[y * dim + x] += left[y * dim + k] * right[k * dim + x];
       } 
     } 
   } 
 }
 
 
-inline void matmulFaster() {
+inline void matmulReordered() {
   for (int y = 0; y < dim; y++) {
     for (int k = 0; k < dim; k++) {
       float lnum = left[y * dim + k];
       for (int x = 0; x < dim; x++) {
-        resultA[y * dim + x] +=
-            lnum * right[k * dim + x];
+        resultA[y * dim + x] += lnum * right[k * dim + x];
       } 
     } 
   } 
@@ -231,7 +229,7 @@ int main() {
 
   resultA =  new float[dim*dim];
   tStart = clock();
-  matmulFaster();
+  matmulReordered();
   printf("Time taken (reorder): %.2fs\n", (double)(clock() - tStart)/CLOCKS_PER_SEC);
 
   resultC =  new float[dim*dim];
