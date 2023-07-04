@@ -97,6 +97,31 @@ inline void matmulSwizzleAvx() {
   } 
 }
 
+inline void matmulAvx2() {
+  __m256 *rightm = (__m256*)right;
+  __m256 *resultm = (__m256*)resultC;
+  #pragma omp parallel for
+  for(int y = 0; y < dim; y+=by) {
+    for(int x = 0; x < dim; x+=bx*8) {
+      __m256 accm[by][bx] = {};
+      for(int k = 0; k < dim; k++) {
+        for(int iy = 0; iy < by; iy++) {
+            __m256 ta = _mm256_broadcast_ss(&left[((y+iy)*dim) + k]);
+            for(int ix = 0; ix < bx*8; ix+=8) {
+              accm[iy][ix/8] = _mm256_fmadd_ps(ta, rightm[((k*dim) + x + ix)/8],accm[iy][ix/8]);
+               //resultm[((y+iy)*dim + x + ix)/8] = _mm256_fmadd_ps(ta, rightm[((k*dim) + x + ix)/8], resultm[((y+iy)*dim + x + ix)/8]);
+            }
+         }
+      }
+      for(int iy = 0; iy < by; iy++) {
+        for(int ix = 0; ix < bx*8; ix+=8) {
+          resultm[((y+iy)*dim + x + ix)/8] = accm[iy][ix/8];
+        }
+      }
+    }
+  }
+}
+
 inline void matmulSwizzleAvxMulti() {
   __m256 *rightm = (__m256*)rightr2;
   __m256 *resultm = (__m256*)resultC;
@@ -290,6 +315,18 @@ int main() {
   startTime = omp_get_wtime();
   matmulSwizzleAvxMulti();
   printf("Time taken (swizzle + avx + multi): %.5fs\n", (double)(omp_get_wtime() - startTime));
+  for(int i = 0; i < dim*dim; i++) {
+      if(abs(resultC[i] - resultA[i]) > abs(resultA[i]*0.00001)) {
+          float diff = abs(resultC[i] - resultA[i]);
+          printf("ffs %d %f -> %f %f\n",i,resultC[i],resultA[i],diff,rightr2);
+          return 0;
+      }
+  }
+
+  resultC =  new float[dim*dim];
+  startTime = omp_get_wtime();
+  matmulAvx2();
+  printf("Time taken (AVX2): %.5fs\n", (double)(omp_get_wtime() - startTime));
   for(int i = 0; i < dim*dim; i++) {
       if(abs(resultC[i] - resultA[i]) > abs(resultA[i]*0.00001)) {
           float diff = abs(resultC[i] - resultA[i]);
