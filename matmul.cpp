@@ -100,22 +100,21 @@ inline void matmulSwizzleAvx() {
 inline void matmulAvx2() {
   __m256 *rightm = (__m256*)right;
   __m256 *resultm = (__m256*)resultC;
-  #pragma omp parallel for
-  for(int y = 0; y < dim; y+=by) {
-    for(int x = 0; x < dim; x+=bx*8) {
+  for(int x = 0; x < dim; x+=bx*8) {
+    for(int y = 0; y < dim; y+=by) {
       __m256 accm[by][bx] = {};
       for(int k = 0; k < dim; k++) {
         for(int iy = 0; iy < by; iy++) {
             __m256 ta = _mm256_broadcast_ss(&left[((y+iy)*dim) + k]);
-            for(int ix = 0; ix < bx*8; ix+=8) {
-              accm[iy][ix/8] = _mm256_fmadd_ps(ta, rightm[((k*dim) + x + ix)/8],accm[iy][ix/8]);
+            for(int ix = 0; ix < bx; ix++) {
+              accm[iy][ix] = _mm256_fmadd_ps(ta, rightm[((k*dim) + x + ix*8)/8],accm[iy][ix]);
                //resultm[((y+iy)*dim + x + ix)/8] = _mm256_fmadd_ps(ta, rightm[((k*dim) + x + ix)/8], resultm[((y+iy)*dim + x + ix)/8]);
             }
          }
       }
       for(int iy = 0; iy < by; iy++) {
-        for(int ix = 0; ix < bx*8; ix+=8) {
-          resultm[((y+iy)*dim + x + ix)/8] = accm[iy][ix/8];
+        for(int ix = 0; ix < bx; ix++) {
+          resultm[((y+iy)*dim + x + ix*8)/8] = accm[iy][ix];
         }
       }
     }
@@ -227,8 +226,8 @@ int main() {
   }
 
   clock_t tStart;
-  matmulImplNaive();
-  printf("Time taken: %.2fs\n", (double)(clock() - tStart)/CLOCKS_PER_SEC);
+  //matmulImplNaive();
+  //printf("Time taken: %.2fs\n", (double)(clock() - tStart)/CLOCKS_PER_SEC);
 
   resultA =  new float[dim*dim];
   tStart = clock();
