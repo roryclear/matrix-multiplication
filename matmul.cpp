@@ -258,7 +258,7 @@ int main() {
 
   clock_t tStart;
   matmulImplNaive();
-  printf("Time taken: %.2fs\n", (double)(clock() - tStart)/CLOCKS_PER_SEC);
+  printf("Time taken (Naive): %.2fs\n", (double)(clock() - tStart)/CLOCKS_PER_SEC);
 
   resultA =  new float[dim*dim];
   tStart = clock();
