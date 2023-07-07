@@ -19,13 +19,11 @@ def matmul(a,b):
                         device float *res,
     uint3 index [[thread_position_in_grid]])
     {{     
-        for(int y = 0; y < dim; y++) {{
-            for(int x = 0; x < dim; x++) {{
-                float total = 0;
-                for(int k = 0; k < dim; k++) {{
-                    total += a[y*dim + k] * b[k + x*dim];  
+        for(int k = 0; k < dim; k++) {{
+            for(int y = 0; y < dim; y++) {{
+                for(int x = 0; x < dim; x++) {{
+                    res[y*dim + x] += a[y*dim + k] * b[k*dim + x];  
                 }}
-                res[y*dim + x] += total;
             }}
         }}
     }}"""

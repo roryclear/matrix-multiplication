@@ -11,12 +11,12 @@ answer = np.empty_like(a)
 
 b2 = np.zeros_like(b)
 
-for y in range(length):
-	for x in range(length):
-		b2[y][x] = b[x][y];
+#for y in range(length):
+#	for x in range(length):
+#		b2[y][x] = b[x][y];
 
 start_time = time.time()
-om = mmm.matmul(a,b2)
+om = mmm.matmul(a,b)
 print("--- metal %.5f seconds ---" % (time.time() - start_time))
 
 
