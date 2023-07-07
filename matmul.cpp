@@ -238,6 +238,16 @@ inline void matmulTilingMulti() {
   }
 }
 
+inline void checkOutput() {
+  for(int i = 0; i < dim*dim; i++) {
+    if(abs(resultC[i] - resultA[i]) > abs(resultA[i]*0.00001)) {
+        float diff = abs(resultC[i] - resultA[i]);
+        printf("ffs %d %f -> %f %f\n",i,resultC[i],resultA[i],diff);
+        exit(0);
+    }
+  }
+}
+
 
 
 int main() {
@@ -259,12 +269,7 @@ int main() {
   double startTime = omp_get_wtime();
   matmulTiling();
   printf("Time taken (reorder + tiling): %.2fs\n", (double)(omp_get_wtime() - startTime));
-  for(int i = 0; i < dim*dim; i++) {
-      if(resultA[i] != resultC[i]) {
-          printf("ffs %d",i);
-          return 0;
-      }
-  }
+  checkOutput();
 
   for(int y = 0; y < dim; y++) {
     for(int x = 0; x < dim; x++) {
@@ -276,26 +281,14 @@ int main() {
   startTime = omp_get_wtime();
   matmulAvx();
   printf("Time taken (avx + tiling): %.5fs\n", (double)(omp_get_wtime() - startTime));
-  for(int i = 0; i < dim*dim; i++) {
-      if(abs(resultC[i] - resultA[i]) > abs(resultA[i]*0.00001)) {
-          float diff = abs(resultC[i] - resultA[i]);
-          printf("ffs %d %f -> %f %f\n",i,resultC[i],resultA[i],diff,rightr2);
-          return 0;
-      }
-  }
+  checkOutput();
 
 
   resultC =  new float[dim*dim];
   startTime = omp_get_wtime();
   matmulSwizzle();
   printf("Time taken (swizzle): %.5fs\n", (double)(omp_get_wtime() - startTime));
-  for(int i = 0; i < dim*dim; i++) {
-      if(abs(resultC[i] - resultA[i]) > abs(resultA[i]*0.00001)) {
-          float diff = abs(resultC[i] - resultA[i]);
-          printf("ffs %d %f -> %f %f\n",i,resultC[i],resultA[i],diff);
-          return 0;
-      }
-  }
+  checkOutput();
 
   for(int y = 0; y < dim; y+=8) {
     for(int x = 0; x < dim; x++) {
@@ -309,60 +302,31 @@ int main() {
   startTime = omp_get_wtime();
   matmulSwizzleAvx();
   printf("Time taken (swizzle + avx + tiling): %.5fs\n", (double)(omp_get_wtime() - startTime));
-  for(int i = 0; i < dim*dim; i++) {
-      if(abs(resultC[i] - resultA[i]) > abs(resultA[i]*0.00001)) {
-          float diff = abs(resultC[i] - resultA[i]);
-          printf("ffs %d %f -> %f %f\n",i,resultC[i],resultA[i],diff,rightr2);
-          return 0;
-      }
-  }
+  checkOutput();
 
   resultC =  new float[dim*dim];
   startTime = omp_get_wtime();
   matmulAvxMutlti();
   printf("Time taken (avx + tiling + multi): %.5fs\n", (double)(omp_get_wtime() - startTime));
-  for(int i = 0; i < dim*dim; i++) {
-      if(abs(resultC[i] - resultA[i]) > abs(resultA[i]*0.00001)) {
-          float diff = abs(resultC[i] - resultA[i]);
-          printf("ffs %d %f -> %f %f\n",i,resultC[i],resultA[i],diff,rightr2);
-          return 0;
-      }
-  }
+  checkOutput();
 
   resultC =  new float[dim*dim];
   startTime = omp_get_wtime();
   matmulTilingMulti();
   printf("Time taken (reorder + tiling + multi): %.5fs\n", (double)(omp_get_wtime() - startTime));
-  for(int i = 0; i < dim*dim; i++) {
-      if(resultA[i] != resultC[i]) {
-          printf("ffs %d",i);
-          return 0;
-      }
-  }
+  checkOutput();
 
   resultC =  new float[dim*dim];
   startTime = omp_get_wtime();
   matmulSwizzleMulti();
   printf("Time taken (swizzle + multi): %.5fs\n", (double)(omp_get_wtime() - startTime));
-  for(int i = 0; i < dim*dim; i++) {
-      if(abs(resultC[i] - resultA[i]) > abs(resultA[i]*0.00001)) {
-          float diff = abs(resultC[i] - resultA[i]);
-          printf("ffs %d %f -> %f %f\n",i,resultC[i],resultA[i],diff);
-          return 0;
-      }
-  }
+  checkOutput();
 
   resultC =  new float[dim*dim];
   startTime = omp_get_wtime();
   matmulSwizzleAvxMulti();
   printf("Time taken (swizzle + avx + tiling + multi): %.5fs\n", (double)(omp_get_wtime() - startTime));
-  for(int i = 0; i < dim*dim; i++) {
-      if(abs(resultC[i] - resultA[i]) > abs(resultA[i]*0.00001)) {
-          float diff = abs(resultC[i] - resultA[i]);
-          printf("ffs %d %f -> %f %f\n",i,resultC[i],resultA[i],diff,rightr2);
-          return 0;
-      }
-  }
+  checkOutput();
 
   return 0;
 }
