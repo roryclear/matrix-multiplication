@@ -256,17 +256,17 @@ int main() {
       right[i] = static_cast <float> (rand()) / static_cast <float> (RAND_MAX);
   }
 
-  clock_t tStart;
+  double startTime = omp_get_wtime();
   matmulImplNaive();
-  printf("Time taken (Naive): %.2fs\n", (double)(clock() - tStart)/CLOCKS_PER_SEC);
+  printf("Time taken (Naive): %.2fs\n", (double)(omp_get_wtime() - startTime));
 
   resultA =  new float[dim*dim];
-  tStart = clock();
+  startTime = omp_get_wtime();
   matmulReordered();
-  printf("Time taken (reorder): %.2fs\n", (double)(clock() - tStart)/CLOCKS_PER_SEC);
+  printf("Time taken (reorder): %.2fs\n", (double)(omp_get_wtime() - startTime));
 
   resultC =  new float[dim*dim];
-  double startTime = omp_get_wtime();
+  startTime = omp_get_wtime();
   matmulTiling();
   printf("Time taken (reorder + tiling): %.2fs\n", (double)(omp_get_wtime() - startTime));
   checkOutput();
