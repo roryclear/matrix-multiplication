@@ -13,7 +13,7 @@
 | reorder + tiling + multi  |   | 0.00345s  | broken |
 | swizzle + multi  |   | 0.00213s  | 0.00220s |
 | swizzle + avx + tiling + multi  |   | 0.00175s  | 0.00200s |
-| **numpy**  |   | **0.00252s** | **0.01567s** |
+| **numpy**  |   | **0.00252s** |  |
 
 #### 1024x1024
 | implementation  | M2  | MBP16 6-Core i7  |  XPS13  |
