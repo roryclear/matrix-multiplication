@@ -3,17 +3,17 @@
 #### 512x512
 | implementation  | M2  | MBP16 6-Core i7  |  XPS13  |
 |---|---|---|---|
-| naive  |   | 0.24s  |   |
-| reorder |   | 0.0178s  |   |
-| reorder + tiling  |   | 0.0154s  |   |
-| avx + tiling  |   | 0.01129s  |   |
-| swizzle  |   | 0.00817s  |   |
-| swizzle + avx + tiling  |   | 0.00817s  |   |
-| avx + tiling + multi  |   | 0.00451s  |   |
-| reorder + tiling + multi  |   | 0.00345s  |   |
-| swizzle + multi  |   | 0.00213s  |   |
-| swizzle + avx + tiling + multi  |   | 0.00175s  |   |
-| **numpy**  |   | 0.00252s  |   |
+| naive  |   | 0.24s  | 0.23s |
+| reorder |   | 0.0178s  | 0.0125s |
+| reorder + tiling  |   | 0.0154s  | 0.0125s |
+| avx + tiling  |   | 0.01129s  | 0.01090s |
+| swizzle  |   | 0.00817s  | 0.00760s |
+| swizzle + avx + tiling  |   | 0.00817s  | 0.00640s |
+| avx + tiling + multi  |   | 0.00451s  | 0.00530s |
+| reorder + tiling + multi  |   | 0.00345s  | broken |
+| swizzle + multi  |   | 0.00213s  | 0.00220s |
+| swizzle + avx + tiling + multi  |   | 0.00175s  | 0.00200s |
+| **numpy**  |   | **0.00252s** | **0.01567s** |
 
 #### 1024x1024
 | implementation  | M2  | MBP16 6-Core i7  |  XPS13  |
