@@ -18,29 +18,29 @@
 #### 1024x1024
 | implementation  | M2  | MBP16 6-Core i7  |  XPS13  |
 |---|---|---|---|
-| naive  |   | 2.16s  |   |
-| reorder |   | 0.11s  |   |
-| reorder + tiling  |   | 0.08s  |   |
-| avx + tiling  |   | 0.06631s  |   |
-| swizzle  |   | 0.04215s  |   |
-| swizzle + avx + tiling  |   | 0.03816s  |   |
-| avx + tiling + multi  |   | 0.02268s  |   |
-| reorder + tiling + multi  |   | 0.02070s  |   |
-| swizzle + multi  |   | 0.00914s  |   |
-| swizzle + avx + tiling + multi  |   | 0.00704s  |   |
-| **numpy**  |   | 0.00802s  |   |
+| naive  |   | 2.16s  | 2.29s |
+| reorder |   | 0.11s  | 0.0900s |
+| reorder + tiling  |   | 0.08s  | 0.0700s |
+| avx + tiling  |   | 0.06631s  | 0.04710s |
+| swizzle  |   | 0.04215s  | 0.03040s |
+| swizzle + avx + tiling  |   | 0.03816s  | 0.02590s |
+| avx + tiling + multi  |   | 0.02268s  | 0.02100s |
+| reorder + tiling + multi  |   | 0.02070s  | 0.02330s |
+| swizzle + multi  |   | 0.00914s  | 0.01000s |
+| swizzle + avx + tiling + multi  |   | 0.00704s  | 0.00940s |
+| **numpy**  |   | **0.00802s** | **0.01557s** |
 
 #### 2048x2048
 | implementation  | M2  | MBP16 6-Core i7  |  XPS13  |
 |---|---|---|---|
-| naive  |   | 100.57s  |   |
-| reorder |   | 1.75s  |   |
-| reorder + tiling  |   | 0.57s  |   |
-| avx + tiling  |   | 1.79998s  |   |
-| swizzle  |   | 0.44771s  |   |
-| swizzle + avx + tiling  |   | 0.38539s  |   |
-| avx + tiling + multi  |   | 0.92692s  |   |
-| reorder + tiling + multi  |   | 0.13381s  |   |
-| swizzle + multi  |   | 0.06972s  |   |
-| swizzle + avx + tiling + multi  |   | 0.06047s  |   |
-| **numpy**  |   | 0.04559  |   |
+| naive  |   | 100.57s  | 61.56s |
+| reorder |   | 1.75s  | 1.4176s |
+| reorder + tiling  |   | 0.57s  | 0.8197s |
+| avx + tiling  |   | 1.79998s  | 1.51850s |
+| swizzle  |   | 0.44771s  | 0.40390s |
+| swizzle + avx + tiling  |   | 0.38539s  | 0.39300s |
+| avx + tiling + multi  |   | 0.92692s  | 0.55380s |
+| reorder + tiling + multi  |   | 0.13381s  | 0.19100s |
+| swizzle + multi  |   | 0.06972s  | 0.09370s |
+| swizzle + avx + tiling + multi  |   | 0.06047s  | 0.08410s |
+| **numpy**  |   | **0.04559** | **0.06244** |
