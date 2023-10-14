@@ -218,8 +218,8 @@ inline void matmulTiling() {
 //1024 4 4 best on xps
 // 256 16 8 best on macbook
 inline void matmulTilingMulti() {
-  int xs = 256;
-  int ys = 16;
+  int xs = 1024;
+  int ys = 4;
   int ks = 4;
   #pragma omp parallel for
   for(int yt = 0; yt < dim; yt+=ys) {
@@ -259,40 +259,42 @@ int main() {
 
   double t = 0;
   double startTime = 0;
+  int sleepTime = 1;
+  int tries = 1;
 
-  for(int i = 0; i < 10; i++) {
+  for(int i = 0; i < tries; i++) {
     startTime = omp_get_wtime();
     matmulImplNaive();
     t += (double)(omp_get_wtime() - startTime);
     //printf("Time taken (Naive): %.2fs\n", t);
-    usleep(5000000);
+    usleep(sleepTime);
     //printf("done one");
   }
-  printf("avg Time taken (Naive): %.2fs\n", t/10);
+  printf("avg Time taken (Naive): %.2fs\n", t/tries);
 
   t = 0;
-  for(int i = 0; i < 10; i++) {
+  for(int i = 0; i < tries; i++) {
     resultA =  new float[dim*dim];
     startTime = omp_get_wtime();
     matmulReordered();
     t+= (double)(omp_get_wtime() - startTime);
     //printf("Time taken (reorder): %.2fs\n", t);
-    usleep(1000000);
+    usleep(sleepTime);
   }
-  printf("avg Time taken (reorder): %.4fs\n", t/10);
+  printf("avg Time taken (reorder): %.4fs\n", t/tries);
 
 
   t = 0;
-  for(int i = 0; i < 10; i++) {
+  for(int i = 0; i < tries; i++) {
     resultC =  new float[dim*dim];
     startTime = omp_get_wtime();
     matmulTiling();
     t += (double)(omp_get_wtime() - startTime);
     //printf("Time taken (reorder + tiling): %.2fs\n", t);
     checkOutput();
-    usleep(5000000);
+    usleep(sleepTime);
   }
-  printf("avg Time taken (reorder + tiling): %.4fs\n", t/10);
+  printf("avg Time taken (reorder + tiling): %.4fs\n", t/tries);
 
   for(int y = 0; y < dim; y++) {
     for(int x = 0; x < dim; x++) {
@@ -301,26 +303,26 @@ int main() {
   }
 
   t = 0;
-  for(int i = 0; i < 10; i++) {
+  for(int i = 0; i < tries; i++) {
     resultC =  new float[dim*dim];
     startTime = omp_get_wtime();
     matmulAvx();
     t += (double)(omp_get_wtime() - startTime);
     //printf("Time taken (avx + tiling): %.5fs\n", t);
     checkOutput();
-    usleep(5000000);
+    usleep(sleepTime);
   }
-  printf("avg Time taken (avx + tiling): %.5fs\n", t/10);
+  printf("avg Time taken (avx + tiling): %.5fs\n", t/tries);
 
   t = 0;
-  for(int i = 0; i < 10; i++) {
+  for(int i = 0; i < tries; i++) {
     resultC =  new float[dim*dim];
     startTime = omp_get_wtime();
     matmulSwizzle();
     t += (double)(omp_get_wtime() - startTime);
     //printf("Time taken (swizzle): %.5fs\n", t);
     checkOutput();
-    usleep(5000000);
+    usleep(sleepTime);
   }
   printf("avg Time taken (swizzle): %.5fs\n", t/10);
 
@@ -333,64 +335,64 @@ int main() {
   }
   
   t = 0;
-  for(int i = 0; i < 10; i++) {
+  for(int i = 0; i < tries; i++) {
     resultC =  new float[dim*dim];
     startTime = omp_get_wtime();
     matmulSwizzleAvx();
     t += (double)(omp_get_wtime() - startTime);
     //printf("Time taken (swizzle + avx + tiling): %.5fs\n", t);
     checkOutput();
-    usleep(10000000);
+    usleep(sleepTime);
   } 
-  printf("avg Time taken (swizzle + avx + tiling): %.5fs\n", t/10);
+  printf("avg Time taken (swizzle + avx + tiling): %.5fs\n", t/tries);
 
   t = 0;
-  for(int i = 0; i < 10; i++) {
+  for(int i = 0; i < tries; i++) {
     resultC =  new float[dim*dim];
     startTime = omp_get_wtime();
     matmulAvxMutlti();
     t += (double)(omp_get_wtime() - startTime);
     //printf("Time taken (avx + tiling + multi): %.5fs\n", t);
     checkOutput();
-    usleep(5000000);
+    usleep(sleepTime);
   }
-  printf("avg Time taken (avx + tiling + multi): %.5fs\n", t/10);
+  printf("avg Time taken (avx + tiling + multi): %.5fs\n", t/tries);
 
   t = 0;
-  for(int i = 0; i < 10; i++) {
+  for(int i = 0; i < tries; i++) {
     resultC =  new float[dim*dim];
     startTime = omp_get_wtime();
-    matmulTilingMulti();
+    //matmulTilingMulti();
     t += (double)(omp_get_wtime() - startTime);
     //printf("Time taken (reorder + tiling + multi): %.5fs\n", t);
-    checkOutput();
-    usleep(5000000);
+    //checkOutput();
+    usleep(sleepTime);
   }
-  printf("avg Time taken (reorder + tiling + multi): %.5fs\n", t/10);
+  printf("avg Time taken (reorder + tiling + multi): %.5fs\n", t/tries);
 
   t = 0;
-  for(int i = 0; i < 10; i++) {
+  for(int i = 0; i < tries; i++) {
     resultC =  new float[dim*dim];
     startTime = omp_get_wtime();
     matmulSwizzleMulti();
     t += (double)(omp_get_wtime() - startTime);
     //printf("Time taken (swizzle + multi): %.5fs\n", t);
     checkOutput();
-    usleep(5000000);
+    usleep(sleepTime);
   }
-  printf("avg Time taken (swizzle + multi): %.5fs\n", t/10);
+  printf("avg Time taken (swizzle + multi): %.5fs\n", t/tries);
 
   t = 0;
-  for(int i = 0; i < 10; i++) {
+  for(int i = 0; i < tries; i++) {
     resultC =  new float[dim*dim];
     startTime = omp_get_wtime();
     matmulSwizzleAvxMulti();
     t += (double)(omp_get_wtime() - startTime);
     //printf("Time taken (swizzle + avx + tiling + multi): %.5fs\n", t);
     checkOutput();
-    usleep(5000000);
+    usleep(sleepTime);
   }
-  printf("avg Time taken (swizzle + avx + tiling + multi): %.5fs\n", t/10);
+  printf("avg Time taken (swizzle + avx + tiling + multi): %.5fs\n", t/tries);
 
   return 0;
 }
