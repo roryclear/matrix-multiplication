@@ -12,36 +12,22 @@ def matmul(a,b):
     encoder = command_buffer.computeCommandEncoder()
 
     prg = f"""#include <metal_stdlib>
+    #include <metal_simdgroup_matrix>
     using namespace metal;
-    kernel void matmul(device float *a,
-                        device float *b,
-                        device int& dim,
-                        device float *res,
-    uint3 index [[thread_position_in_grid]])
+    kernel void matmul(device float *res,
+                        device const float *a,
+                        device const float *b,
+                        uint3 gid [[threadgroup_position_in_grid]], uint3 lid [[thread_position_in_threadgroup]])
     {{  
-        const int by = 4;
-        const int bx = 2;
-        for(int x = 0; x < dim; x+=bx) {{
-            for(int y = 0; y < dim; y+=by) {{
-                float acc[by][bx] = {{}};
-                for(int k = 0; k < dim; k++) {{
-                    for(int iy = 0; iy < by; iy++) {{
-                        float lnum = a[(y + iy)*dim + k];
-                        for(int ix = 0; ix < bx; ix++) {{
-                            //res[(y+iy)*dim + (x + ix)] += lnum * b[k*dim + (x + ix)];
-                            acc[iy][ix] += lnum * b[k*dim + (x + ix)];
-                        }}
-                    }}
-                }}
+      simdgroup_float8x8 x;
+      simdgroup_float8x8 y;
+      simdgroup_float8x8 acc = simdgroup_float8x8(0);
 
-            for(int iy = 0; iy < by; iy++) {{
-                for(int ix = 0; ix < bx; ix++) {{
-                    res[(y+iy)*dim + (x + ix)] = acc[iy][ix];
-                }}
-            }}
+      simdgroup_load(x,a,8,ulong2(0,0));
+      simdgroup_load(y,b,8,ulong2(0,0));
 
-            }}
-        }}
+      simdgroup_multiply_accumulate(acc, x, y, acc);
+      simdgroup_store(acc,res,8,ulong2(0,0));
     }}"""
 
     options = Metal.MTLCompileOptions.alloc().init()
@@ -67,14 +53,16 @@ def matmul(a,b):
     res = np.empty([dim, dim]).astype(np.float32).flatten()
     res_buffer = device.newBufferWithLength_options_(res.nbytes ,1)
 
-    encoder.setBuffer_offset_atIndex_(a_buffer, 0, 0)
-    encoder.setBuffer_offset_atIndex_(b_buffer, 0, 1)
-    encoder.setBuffer_offset_atIndex_(dim_buffer, 0, 2)
-    encoder.setBuffer_offset_atIndex_(res_buffer, 0, 3)
+    encoder.setBuffer_offset_atIndex_(a_buffer, 0, 1)
+    encoder.setBuffer_offset_atIndex_(b_buffer, 0, 2)
+    encoder.setBuffer_offset_atIndex_(res_buffer, 0, 0)
     threadGroupSize = pipeline_state.maxTotalThreadsPerThreadgroup()
     if dim*dim < threadGroupSize:
         threadGroupSize = dim*dim
-    encoder.dispatchThreads_threadsPerThreadgroup_(Metal.MTLSizeMake(1,1,1), Metal.MTLSizeMake(1,1,1)) #1thread for now?
+    print("max threadGroupSize =",pipeline_state.maxTotalThreadsPerThreadgroup())
+    threadsPerGrid = Metal.MTLSizeMake(32,1,1)
+    threadsPerThreadGroup = Metal.MTLSizeMake(32,1,1)
+    encoder.dispatchThreads_threadsPerThreadgroup_(threadsPerGrid, threadsPerThreadGroup) #1thread for now?
     encoder.endEncoding()
     command_buffer.commit()
     command_buffer.waitUntilCompleted()

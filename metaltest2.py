@@ -3,10 +3,15 @@ import matmulmetal2 as mmm
 import matmulopencl as mmo
 import time
 
-length = 512
+length = 8
 
 a = np.random.rand(length,length).astype(np.float32)
 b = np.random.rand(length,length).astype(np.float32)
+
+print("a =",a)
+print("\nb =",b)
+#a = np.empty_like(a)
+#b = np.empty_like(b)
 answer = np.empty_like(a)
 
 b2 = np.zeros_like(b)
