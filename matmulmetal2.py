@@ -23,6 +23,12 @@ def matmul(a,b):
       simdgroup_float8x8 y[4];
       simdgroup_float8x8 acc = simdgroup_float8x8(0);
 
+      simdgroup_float8x8 acc2[4];
+      acc2[0] = simdgroup_float8x8(0);
+      acc2[1] = simdgroup_float8x8(0);
+      acc2[2] = simdgroup_float8x8(0);
+      acc2[3] = simdgroup_float8x8(0);
+
       simdgroup_load(x[0],a,16,ulong2(0,0));
       simdgroup_load(y[0],b,16,ulong2(0,0));
       simdgroup_load(x[1],a+8,16,ulong2(0,0));
@@ -33,41 +39,20 @@ def matmul(a,b):
       simdgroup_load(x[3],a+128+8,16,ulong2(0,0));
       simdgroup_load(y[3],b+128+8,16,ulong2(0,0));
 
-      //simdgroup_multiply_accumulate(acc, x, y, acc);
-      //simdgroup_store(y[0],res,16,ulong2(0,0));
-      //simdgroup_store(y[1],res+8,16,ulong2(0,0));
-      //simdgroup_store(y[2],res+128,16,ulong2(0,0));
-      //simdgroup_store(y[3],res+128+8,16,ulong2(0,0));
+      simdgroup_multiply_accumulate(acc2[0], x[0], y[0], acc2[0]);
+      simdgroup_multiply_accumulate(acc2[0], x[1], y[2], acc2[0]);
+      simdgroup_multiply_accumulate(acc2[1], x[0], y[1], acc2[1]);
+      simdgroup_multiply_accumulate(acc2[1], x[1], y[3], acc2[1]);
+      simdgroup_multiply_accumulate(acc2[2], x[2], y[0], acc2[2]);
+      simdgroup_multiply_accumulate(acc2[2], x[3], y[2], acc2[2]);
+      simdgroup_multiply_accumulate(acc2[3], x[2], y[1], acc2[3]);
+      simdgroup_multiply_accumulate(acc2[3], x[3], y[3], acc2[3]);
 
-      simdgroup_multiply_accumulate(acc, x[0], y[0], acc);
-      simdgroup_store(acc,res,16,ulong2(0,0));
-
-      simdgroup_multiply_accumulate(acc, x[1], y[2], acc);
-      simdgroup_store(acc,res,16,ulong2(0,0));
-
-      acc = simdgroup_float8x8(0);
-
-      simdgroup_multiply_accumulate(acc, x[0], y[1], acc);
-      simdgroup_store(acc,res+8,16,ulong2(0,0));
-
-      simdgroup_multiply_accumulate(acc, x[1], y[3], acc);
-      simdgroup_store(acc,res+8,16,ulong2(0,0));
-
-      acc = simdgroup_float8x8(0);
-
-      simdgroup_multiply_accumulate(acc, x[2], y[0], acc);
-      simdgroup_store(acc,res+128,16,ulong2(0,0));
-
-      simdgroup_multiply_accumulate(acc, x[3], y[2], acc);
-      simdgroup_store(acc,res+128,16,ulong2(0,0));
-
-      acc = simdgroup_float8x8(0);
-
-      simdgroup_multiply_accumulate(acc, x[2], y[1], acc);
-      simdgroup_store(acc,res+128+8,16,ulong2(0,0));
-
-      simdgroup_multiply_accumulate(acc, x[3], y[3], acc);
-      simdgroup_store(acc,res+128+8,16,ulong2(0,0));
+      
+      simdgroup_store(acc2[0],res,16,ulong2(0,0));
+      simdgroup_store(acc2[1],res+8,16,ulong2(0,0));
+      simdgroup_store(acc2[2],res+128,16,ulong2(0,0));
+      simdgroup_store(acc2[3],res+128+8,16,ulong2(0,0));
     }}"""
 
     options = Metal.MTLCompileOptions.alloc().init()
