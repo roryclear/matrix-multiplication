@@ -23,10 +23,12 @@ def matmul(a,b):
       simdgroup_float8x8 y[2][2];
 
       simdgroup_float8x8 acc[2][2];
-      acc[0][0] = simdgroup_float8x8(0);
-      acc[0][1] = simdgroup_float8x8(0);
-      acc[1][0] = simdgroup_float8x8(0);
-      acc[1][1] = simdgroup_float8x8(0);
+
+      for(int y = 0; y < 2; y++) {{
+        for(int x = 0; x < 2; x++) {{
+            acc[y][x] = simdgroup_float8x8(0);
+        }}
+      }}
 
       for(int k = 0; k < 2; k++) {{ 
       simdgroup_load(x[0][0],a,16,ulong2(0,0));
