@@ -19,8 +19,8 @@ def matmul(a,b):
                         device const float *b,
                         uint3 gid [[threadgroup_position_in_grid]], uint3 lid [[thread_position_in_threadgroup]])
     {{
-      simdgroup_float8x8 x[4];
-      simdgroup_float8x8 y[4];
+      simdgroup_float8x8 x[2][2];
+      simdgroup_float8x8 y[2][2];
 
       simdgroup_float8x8 acc[2][2];
       acc[0][0] = simdgroup_float8x8(0);
@@ -29,21 +29,21 @@ def matmul(a,b):
       acc[1][1] = simdgroup_float8x8(0);
 
       for(int k = 0; k < 2; k++) {{ 
-      simdgroup_load(x[0],a,16,ulong2(0,0));
-      simdgroup_load(y[0],b,16,ulong2(0,0));
-      simdgroup_load(x[1],a+8,16,ulong2(0,0));
-      simdgroup_load(y[1],b+8,16,ulong2(0,0));
+      simdgroup_load(x[0][0],a,16,ulong2(0,0));
+      simdgroup_load(y[0][0],b,16,ulong2(0,0));
+      simdgroup_load(x[0][1],a+8,16,ulong2(0,0));
+      simdgroup_load(y[0][1],b+8,16,ulong2(0,0));
 
-      simdgroup_load(x[2],a+128,16,ulong2(0,0));
-      simdgroup_load(y[2],b+128,16,ulong2(0,0));
-      simdgroup_load(x[3],a+128+8,16,ulong2(0,0));
-      simdgroup_load(y[3],b+128+8,16,ulong2(0,0));
+      simdgroup_load(x[1][0],a+128,16,ulong2(0,0));
+      simdgroup_load(y[1][0],b+128,16,ulong2(0,0));
+      simdgroup_load(x[1][1],a+128+8,16,ulong2(0,0));
+      simdgroup_load(y[1][1],b+128+8,16,ulong2(0,0));
 
       //2 is the dimension in mutliples of 8x8s
-      simdgroup_multiply_accumulate(acc[0][0], x[0 + k], y[0 + k*2], acc[0][0]);
-      simdgroup_multiply_accumulate(acc[0][1], x[0 + k], y[1 + k*2], acc[0][1]);
-      simdgroup_multiply_accumulate(acc[1][0], x[2 + k], y[0 + k*2], acc[1][0]);
-      simdgroup_multiply_accumulate(acc[1][1], x[2 + k], y[1 + k*2], acc[1][1]);
+      simdgroup_multiply_accumulate(acc[0][0], x[0][k], y[k][0], acc[0][0]);
+      simdgroup_multiply_accumulate(acc[0][1], x[0][k], y[k][1], acc[0][1]);
+      simdgroup_multiply_accumulate(acc[1][0], x[1][k], y[k][0], acc[1][0]);
+      simdgroup_multiply_accumulate(acc[1][1], x[1][k], y[k][1], acc[1][1]);
       }}
 
       simdgroup_store(acc[0][0],res,16,ulong2(0,0));
