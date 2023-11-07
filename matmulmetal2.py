@@ -18,17 +18,17 @@ def matmul(a,b):
                         device const float *a,
                         device const float *b,
                         uint3 gid [[threadgroup_position_in_grid]], uint3 lid [[thread_position_in_threadgroup]])
-    {{  
+    {{
       simdgroup_float8x8 x[4];
       simdgroup_float8x8 y[4];
-      simdgroup_float8x8 acc = simdgroup_float8x8(0);
 
-      simdgroup_float8x8 acc2[4];
-      acc2[0] = simdgroup_float8x8(0);
-      acc2[1] = simdgroup_float8x8(0);
-      acc2[2] = simdgroup_float8x8(0);
-      acc2[3] = simdgroup_float8x8(0);
+      simdgroup_float8x8 acc[2][2];
+      acc[0][0] = simdgroup_float8x8(0);
+      acc[0][1] = simdgroup_float8x8(0);
+      acc[1][0] = simdgroup_float8x8(0);
+      acc[1][1] = simdgroup_float8x8(0);
 
+      for(int k = 0; k < 2; k++) {{ 
       simdgroup_load(x[0],a,16,ulong2(0,0));
       simdgroup_load(y[0],b,16,ulong2(0,0));
       simdgroup_load(x[1],a+8,16,ulong2(0,0));
@@ -39,20 +39,17 @@ def matmul(a,b):
       simdgroup_load(x[3],a+128+8,16,ulong2(0,0));
       simdgroup_load(y[3],b+128+8,16,ulong2(0,0));
 
-      simdgroup_multiply_accumulate(acc2[0], x[0], y[0], acc2[0]);
-      simdgroup_multiply_accumulate(acc2[0], x[1], y[2], acc2[0]);
-      simdgroup_multiply_accumulate(acc2[1], x[0], y[1], acc2[1]);
-      simdgroup_multiply_accumulate(acc2[1], x[1], y[3], acc2[1]);
-      simdgroup_multiply_accumulate(acc2[2], x[2], y[0], acc2[2]);
-      simdgroup_multiply_accumulate(acc2[2], x[3], y[2], acc2[2]);
-      simdgroup_multiply_accumulate(acc2[3], x[2], y[1], acc2[3]);
-      simdgroup_multiply_accumulate(acc2[3], x[3], y[3], acc2[3]);
+      //2 is the dimension in mutliples of 8x8s
+      simdgroup_multiply_accumulate(acc[0][0], x[0 + k], y[0 + k*2], acc[0][0]);
+      simdgroup_multiply_accumulate(acc[0][1], x[0 + k], y[1 + k*2], acc[0][1]);
+      simdgroup_multiply_accumulate(acc[1][0], x[2 + k], y[0 + k*2], acc[1][0]);
+      simdgroup_multiply_accumulate(acc[1][1], x[2 + k], y[1 + k*2], acc[1][1]);
+      }}
 
-      
-      simdgroup_store(acc2[0],res,16,ulong2(0,0));
-      simdgroup_store(acc2[1],res+8,16,ulong2(0,0));
-      simdgroup_store(acc2[2],res+128,16,ulong2(0,0));
-      simdgroup_store(acc2[3],res+128+8,16,ulong2(0,0));
+      simdgroup_store(acc[0][0],res,16,ulong2(0,0));
+      simdgroup_store(acc[0][1],res+8,16,ulong2(0,0));
+      simdgroup_store(acc[1][0],res+128,16,ulong2(0,0));
+      simdgroup_store(acc[1][1],res+128+8,16,ulong2(0,0));
     }}"""
 
     options = Metal.MTLCompileOptions.alloc().init()
