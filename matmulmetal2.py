@@ -52,26 +52,17 @@ def matmul(a,b):
     dim = np.int32(dim)
     dim_buffer = device.newBufferWithLength_options_(4 ,1)
 
-    for i in range(4):
-        dim_buffer.contents().__setitem__(i,dim.tobytes()[i].to_bytes(1,'big'))
+    res_buffer = device.newBufferWithLength_options_(a.nbytes ,1)
 
-    res = np.empty([dim, dim]).astype(np.float32).flatten()
-    res_buffer = device.newBufferWithLength_options_(res.nbytes ,1)
-
+    encoder.setBuffer_offset_atIndex_(res_buffer, 0, 0)
     encoder.setBuffer_offset_atIndex_(a_buffer, 0, 1)
     encoder.setBuffer_offset_atIndex_(b_buffer, 0, 2)
-    encoder.setBuffer_offset_atIndex_(res_buffer, 0, 0)
-    threadGroupSize = pipeline_state.maxTotalThreadsPerThreadgroup()
-    if dim*dim < threadGroupSize:
-        threadGroupSize = dim*dim
-    print("max threadGroupSize =",pipeline_state.maxTotalThreadsPerThreadgroup())
     threadsPerGrid = Metal.MTLSizeMake(8192,256,1)
     threadsPerThreadGroup = Metal.MTLSizeMake(32,32,1)
     encoder.dispatchThreads_threadsPerThreadgroup_(threadsPerGrid, threadsPerThreadGroup) #1thread for now?
     encoder.endEncoding()
     command_buffer.commit()
     command_buffer.waitUntilCompleted()
-
-    output = np.asarray(res_buffer.contents().as_buffer(res.nbytes))
+    output = np.asarray(res_buffer.contents().as_buffer(a.nbytes))
     output = np.frombuffer(output, dtype=np.float32)
     return output
