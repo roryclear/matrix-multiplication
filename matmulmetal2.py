@@ -19,20 +19,20 @@ def matmul(a,b):
                         device const float *b,
                         uint3 gid [[threadgroup_position_in_grid]], uint3 lid [[thread_position_in_threadgroup]])
     {{
-      res += gid.x * 8 + lid.y * 8*128;
-      a += lid.y * 8*128;
+      res += gid.x * 8 + lid.y * 8*{dim};
+      a += lid.y * 8*{dim};
       b += gid.x * 8;
 
-      simdgroup_float8x8 x[16];
-      simdgroup_float8x8 y[16];
+      simdgroup_float8x8 x[{dim} / 8];
+      simdgroup_float8x8 y[{dim} / 8];
       simdgroup_float8x8 acc = simdgroup_float8x8(0);
 
-      for(int i = 0; i < 16; i++) {{
-          simdgroup_load(x[i],a+(8*i),128,ulong2(0,0));
-          simdgroup_load(y[i],b+(8*128*i),128,ulong2(0,0));
+      for(int i = 0; i < {dim}/8; i++) {{
+          simdgroup_load(x[i],a+(8*i),{dim},ulong2(0,0));
+          simdgroup_load(y[i],b+(8*{dim}*i),{dim},ulong2(0,0));
           simdgroup_multiply_accumulate(acc, x[i], y[i], acc);
       }}
-      simdgroup_store(acc,res,128,ulong2(0,0));
+      simdgroup_store(acc,res,{dim},ulong2(0,0));
     }}"""
 
     options = Metal.MTLCompileOptions.alloc().init()
@@ -65,8 +65,8 @@ def matmul(a,b):
     if dim*dim < threadGroupSize:
         threadGroupSize = dim*dim
     print("max threadGroupSize =",pipeline_state.maxTotalThreadsPerThreadgroup())
-    threadsPerGrid = Metal.MTLSizeMake(512,32,1)
-    threadsPerThreadGroup = Metal.MTLSizeMake(32,32,1)
+    threadsPerGrid = Metal.MTLSizeMake(512,16,1)
+    threadsPerThreadGroup = Metal.MTLSizeMake(32,16,1)
     encoder.dispatchThreads_threadsPerThreadgroup_(threadsPerGrid, threadsPerThreadGroup) #1thread for now?
     encoder.endEncoding()
     command_buffer.commit()
