@@ -19,8 +19,8 @@ def matmul(a,b):
                         device const float *b,
                         uint3 gid [[threadgroup_position_in_grid]], uint3 lid [[thread_position_in_threadgroup]])
     {{
-      res += gid.x * 8 + lid.y * 8*8*16;
-      a += lid.y * 8*8*16;
+      res += gid.x * 8 + lid.y * 8*128;
+      a += lid.y * 8*128;
       b += gid.x * 8;
 
       simdgroup_float8x8 x[16];
@@ -29,7 +29,7 @@ def matmul(a,b):
 
       for(int i = 0; i < 16; i++) {{
           simdgroup_load(x[i],a+(8*i),128,ulong2(0,0));
-          simdgroup_load(y[i],b+(8*8*16*i),128,ulong2(0,0));
+          simdgroup_load(y[i],b+(8*128*i),128,ulong2(0,0));
           simdgroup_multiply_accumulate(acc, x[i], y[i], acc);
       }}
       simdgroup_store(acc,res,128,ulong2(0,0));
