@@ -19,39 +19,20 @@ def matmul(a,b):
                         device const float *b,
                         uint3 gid [[threadgroup_position_in_grid]], uint3 lid [[thread_position_in_threadgroup]])
     {{
-      simdgroup_float8x8 x[2][2];
-      simdgroup_float8x8 y[2][2];
+      res += gid.x * 8 + lid.y * 8*8*16;
+      a += lid.y * 8*8*16;
+      b += gid.x * 8;
 
-      simdgroup_float8x8 acc[2][2];
+      simdgroup_float8x8 x[16];
+      simdgroup_float8x8 y[16];
+      simdgroup_float8x8 acc = simdgroup_float8x8(0);
 
-      for(int y = 0; y < 2; y++) {{
-        for(int x = 0; x < 2; x++) {{
-            acc[y][x] = simdgroup_float8x8(0);
-        }}
+      for(int i = 0; i < 16; i++) {{
+          simdgroup_load(x[i],a+(8*i),128,ulong2(0,0));
+          simdgroup_load(y[i],b+(8*8*16*i),128,ulong2(0,0));
+          simdgroup_multiply_accumulate(acc, x[i], y[i], acc);
       }}
-
-      for(int k = 0; k < 2; k++) {{ 
-      simdgroup_load(x[0][0],a,16,ulong2(0,0));
-      simdgroup_load(y[0][0],b,16,ulong2(0,0));
-      simdgroup_load(x[0][1],a+8,16,ulong2(0,0));
-      simdgroup_load(y[0][1],b+8,16,ulong2(0,0));
-
-      simdgroup_load(x[1][0],a+128,16,ulong2(0,0));
-      simdgroup_load(y[1][0],b+128,16,ulong2(0,0));
-      simdgroup_load(x[1][1],a+128+8,16,ulong2(0,0));
-      simdgroup_load(y[1][1],b+128+8,16,ulong2(0,0));
-
-      //2 is the dimension in mutliples of 8x8s
-      simdgroup_multiply_accumulate(acc[0][0], x[0][k], y[k][0], acc[0][0]);
-      simdgroup_multiply_accumulate(acc[0][1], x[0][k], y[k][1], acc[0][1]);
-      simdgroup_multiply_accumulate(acc[1][0], x[1][k], y[k][0], acc[1][0]);
-      simdgroup_multiply_accumulate(acc[1][1], x[1][k], y[k][1], acc[1][1]);
-      }}
-
-      simdgroup_store(acc[0][0],res,16,ulong2(0,0));
-      simdgroup_store(acc[0][1],res+8,16,ulong2(0,0));
-      simdgroup_store(acc[1][0],res+128,16,ulong2(0,0));
-      simdgroup_store(acc[1][1],res+128+8,16,ulong2(0,0));
+      simdgroup_store(acc,res,128,ulong2(0,0));
     }}"""
 
     options = Metal.MTLCompileOptions.alloc().init()
@@ -84,8 +65,8 @@ def matmul(a,b):
     if dim*dim < threadGroupSize:
         threadGroupSize = dim*dim
     print("max threadGroupSize =",pipeline_state.maxTotalThreadsPerThreadgroup())
-    threadsPerGrid = Metal.MTLSizeMake(32,1,1)
-    threadsPerThreadGroup = Metal.MTLSizeMake(32,1,1)
+    threadsPerGrid = Metal.MTLSizeMake(512,32,1)
+    threadsPerThreadGroup = Metal.MTLSizeMake(32,32,1)
     encoder.dispatchThreads_threadsPerThreadgroup_(threadsPerGrid, threadsPerThreadGroup) #1thread for now?
     encoder.endEncoding()
     command_buffer.commit()
