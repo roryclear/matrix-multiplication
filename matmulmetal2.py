@@ -65,8 +65,8 @@ def matmul(a,b):
     if dim*dim < threadGroupSize:
         threadGroupSize = dim*dim
     print("max threadGroupSize =",pipeline_state.maxTotalThreadsPerThreadgroup())
-    threadsPerGrid = Metal.MTLSizeMake(512,16,1)
-    threadsPerThreadGroup = Metal.MTLSizeMake(32,16,1)
+    threadsPerGrid = Metal.MTLSizeMake(1024,32,1)
+    threadsPerThreadGroup = Metal.MTLSizeMake(32,32,1)
     encoder.dispatchThreads_threadsPerThreadgroup_(threadsPerGrid, threadsPerThreadGroup) #1thread for now?
     encoder.endEncoding()
     command_buffer.commit()
