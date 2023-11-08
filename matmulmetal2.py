@@ -4,9 +4,10 @@ import Foundation
 import numpy as np
 import struct
 
+device = Metal.MTLCreateSystemDefaultDevice()
+
 def matmul(a,b):
     dim = a.shape[0]
-    device = Metal.MTLCreateSystemDefaultDevice()
     mtl_queue = device.newCommandQueue()
     command_buffer = mtl_queue.commandBuffer()
     encoder = command_buffer.computeCommandEncoder()
