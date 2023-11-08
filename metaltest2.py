@@ -3,7 +3,7 @@ import matmulmetal2 as mmm
 import matmulopencl as mmo
 import time
 
-length = 256
+length = 2048
 
 a = np.random.rand(length,length).astype(np.float32)
 b = np.random.rand(length,length).astype(np.float32)
@@ -23,7 +23,6 @@ b2 = np.zeros_like(b)
 start_time = time.time()
 om = mmm.matmul(a,b)
 print("--- metal %.5f seconds ---" % (time.time() - start_time))
-
 
 start_time = time.time()
 answer = np.matmul(a,b).flatten()

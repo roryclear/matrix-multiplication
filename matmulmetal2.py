@@ -19,8 +19,8 @@ def matmul(a,b):
                         device const float *b,
                         uint3 gid [[threadgroup_position_in_grid]], uint3 lid [[thread_position_in_threadgroup]])
     {{
-      res += gid.x * 8 + lid.y * 8*{dim};
-      a += lid.y * 8*{dim};
+      res += gid.x * 8 + (lid.y + gid.y * 32) * 8*{dim};
+      a += (lid.y + gid.y * 32) * 8*{dim};
       b += gid.x * 8;
 
       simdgroup_float8x8 x[{dim} / 8];
@@ -65,7 +65,7 @@ def matmul(a,b):
     if dim*dim < threadGroupSize:
         threadGroupSize = dim*dim
     print("max threadGroupSize =",pipeline_state.maxTotalThreadsPerThreadgroup())
-    threadsPerGrid = Metal.MTLSizeMake(1024,32,1)
+    threadsPerGrid = Metal.MTLSizeMake(8192,256,1)
     threadsPerThreadGroup = Metal.MTLSizeMake(32,32,1)
     encoder.dispatchThreads_threadsPerThreadgroup_(threadsPerGrid, threadsPerThreadGroup) #1thread for now?
     encoder.endEncoding()
