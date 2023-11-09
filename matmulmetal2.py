@@ -33,11 +33,11 @@ def matmul(a,b):
         }}
       }}
 
-      for(int i = 0; i < {dim}/8; i++) {{
-          simdgroup_load(x[0],a+(8*i),{dim},ulong2(0,0));
-          simdgroup_load(x[1],a+(8*i)+8*{dim},{dim},ulong2(0,0));
-          simdgroup_load(y[0],b+(8*{dim}*i),{dim},ulong2(0,0));
-          simdgroup_load(y[1],b+(8*{dim}*i+8),{dim},ulong2(0,0));
+      for(int i = 0; i < {dim}; i+=8) {{
+          simdgroup_load(x[0],a+i,{dim},ulong2(0,0));
+          simdgroup_load(x[1],a+i+8*{dim},{dim},ulong2(0,0));
+          simdgroup_load(y[0],b+{dim}*i,{dim},ulong2(0,0));
+          simdgroup_load(y[1],b+{dim}*i+8,{dim},ulong2(0,0));
           simdgroup_multiply_accumulate(acc[0][0], x[0], y[0], acc[0][0]);
           simdgroup_multiply_accumulate(acc[0][1], x[0], y[1], acc[0][1]);
           simdgroup_multiply_accumulate(acc[1][0], x[1], y[0], acc[1][0]);
