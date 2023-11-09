@@ -24,14 +24,14 @@ def matmul(a,b):
       a += (lid.y + gid.y * 32) * 8*{dim};
       b += gid.x * 8;
 
-      simdgroup_float8x8 x[{dim} / 8];
-      simdgroup_float8x8 y[{dim} / 8];
+      simdgroup_float8x8 x = simdgroup_float8x8(0);
+      simdgroup_float8x8 y = simdgroup_float8x8(0);
       simdgroup_float8x8 acc = simdgroup_float8x8(0);
 
       for(int i = 0; i < {dim}/8; i++) {{
-          simdgroup_load(x[i],a+(8*i),{dim},ulong2(0,0));
-          simdgroup_load(y[i],b+(8*{dim}*i),{dim},ulong2(0,0));
-          simdgroup_multiply_accumulate(acc, x[i], y[i], acc);
+          simdgroup_load(x,a+(8*i),{dim},ulong2(0,0));
+          simdgroup_load(y,b+(8*{dim}*i),{dim},ulong2(0,0));
+          simdgroup_multiply_accumulate(acc, x, y, acc);
       }}
       simdgroup_store(acc,res,{dim},ulong2(0,0));
     }}"""
