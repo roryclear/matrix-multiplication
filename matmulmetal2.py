@@ -40,6 +40,7 @@ def matmul(a,b):
           simdgroup_load(y[1],b+{dim}*i+8,{dim},ulong2(0,0));
           simdgroup_load(y[2],b+{dim}*i+8*2,{dim},ulong2(0,0));
           simdgroup_load(y[3],b+{dim}*i+8*3,{dim},ulong2(0,0));
+
           simdgroup_multiply_accumulate(acc[0][0], x[0], y[0], acc[0][0]);
           simdgroup_multiply_accumulate(acc[0][1], x[0], y[1], acc[0][1]);
           simdgroup_multiply_accumulate(acc[0][2], x[0], y[2], acc[0][2]);
@@ -81,9 +82,9 @@ def matmul(a,b):
     encoder.setBuffer_offset_atIndex_(res_buffer, 0, 0)
     encoder.setBuffer_offset_atIndex_(a_buffer, 0, 1)
     encoder.setBuffer_offset_atIndex_(b_buffer, 0, 2)
-    threadsPerGrid = Metal.MTLSizeMake(2048,128,1)
+    threadsPerGrid = Metal.MTLSizeMake(64,4,1)
     threadsPerThreadGroup = Metal.MTLSizeMake(32,32,1)
-    encoder.dispatchThreads_threadsPerThreadgroup_(threadsPerGrid, threadsPerThreadGroup) #1thread for now?
+    encoder.dispatchThreadgroups_threadsPerThreadgroup_(threadsPerGrid, threadsPerThreadGroup) #1thread for now?
     encoder.endEncoding()
     command_buffer.commit()
     command_buffer.waitUntilCompleted()
