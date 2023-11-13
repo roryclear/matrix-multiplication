@@ -7,7 +7,7 @@ import struct
 device = Metal.MTLCreateSystemDefaultDevice()
 
 def matmul(a,b):
-    dim = a.shape[0]
+    dim = len(a)
     mtl_queue = device.newCommandQueue()
     command_buffer = mtl_queue.commandBuffer()
     encoder = command_buffer.computeCommandEncoder()
@@ -66,28 +66,26 @@ def matmul(a,b):
     pipeline_state, err = device.newComputePipelineStateWithFunction_error_(fxn, None)
     encoder.setComputePipelineState_(pipeline_state)
 
-    a_buffer = device.newBufferWithLength_options_(a.nbytes ,1)
-    m = a_buffer.contents().as_buffer(a.nbytes)
+    size = dim*dim*4
+    a_buffer = device.newBufferWithLength_options_(size ,1)
+    m = a_buffer.contents().as_buffer(size)
     m[:] = bytes(a)
 
-    b_buffer = device.newBufferWithLength_options_(b.nbytes ,1)
-    m = b_buffer.contents().as_buffer(b.nbytes)
+    b_buffer = device.newBufferWithLength_options_(size ,1)
+    m = b_buffer.contents().as_buffer(size)
     m[:] = bytes(b)
 
-    dim = np.int32(dim)
-    dim_buffer = device.newBufferWithLength_options_(4 ,1)
-
-    res_buffer = device.newBufferWithLength_options_(a.nbytes ,1)
+    res_buffer = device.newBufferWithLength_options_(size ,1)
 
     encoder.setBuffer_offset_atIndex_(res_buffer, 0, 0)
     encoder.setBuffer_offset_atIndex_(a_buffer, 0, 1)
     encoder.setBuffer_offset_atIndex_(b_buffer, 0, 2)
     threadsPerGrid = Metal.MTLSizeMake(64,4,1)
     threadsPerThreadGroup = Metal.MTLSizeMake(32,32,1)
-    encoder.dispatchThreadgroups_threadsPerThreadgroup_(threadsPerGrid, threadsPerThreadGroup) #1thread for now?
+    encoder.dispatchThreadgroups_threadsPerThreadgroup_(threadsPerGrid, threadsPerThreadGroup)
     encoder.endEncoding()
     command_buffer.commit()
     command_buffer.waitUntilCompleted()
-    output = np.asarray(res_buffer.contents().as_buffer(a.nbytes))
+    output = np.asarray(res_buffer.contents().as_buffer(size))
     output = np.frombuffer(output, dtype=np.float32)
     return output
