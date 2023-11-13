@@ -4,37 +4,60 @@ import Foundation
 import numpy as np
 import struct
 
+device = Metal.MTLCreateSystemDefaultDevice()
+
 def matmul(a,b):
-    aRows = a.shape[0]
-    aCols = a.shape[1]
-    bRows = b.shape[0]
-    bCols = b.shape[1]
-    device = Metal.MTLCreateSystemDefaultDevice()
+    dim = a.shape[0]
     mtl_queue = device.newCommandQueue()
     command_buffer = mtl_queue.commandBuffer()
     encoder = command_buffer.computeCommandEncoder()
 
     prg = f"""#include <metal_stdlib>
+    #include <metal_simdgroup_matrix>
     using namespace metal;
-    kernel void matmul(device float *a,
-                        device float *b,
-                        device int& aRows,
-                        device int& aCols,
-                        device int& bCols,
-                        device float *res,
-    uint index [[thread_position_in_grid]])
-    {{     
-          int row = index / bCols;
-          int col = index % bCols;
-          float total = 0;
-          if(row < aRows && col < bCols) 
-          {{
-            for(int i = 0; i < aCols; i++)
-            {{
-              total += a[row * aCols + i] * b[col + i * bCols];
-            }}
-            res[row * bCols + col] = total;
-          }}
+    kernel void matmul(device float *res,
+                        device const float *a,
+                        device const float *b,
+                        uint3 gid [[threadgroup_position_in_grid]], uint3 lid [[thread_position_in_threadgroup]])
+    {{
+       res += gid.x * 4 * 8 + (lid.y + gid.y * 32) * 8*2*{dim};
+       a += (lid.y + gid.y * 32) * 8*2*{dim};
+       b += gid.x * 8*4;
+
+      simdgroup_float8x8 x[2];
+      simdgroup_float8x8 y[4];
+      simdgroup_float8x8 acc[2][4];
+      for(int j = 0; j < 2; j++) {{
+        for(int i = 0; i < 4; i++) {{
+            acc[j][i] = simdgroup_float8x8(0);
+        }}
+      }}
+
+      for(int i = 0; i < {dim}; i+=8) {{
+          simdgroup_load(x[0],a+i,{dim},ulong2(0,0));
+          simdgroup_load(x[1],a+i+8*{dim},{dim},ulong2(0,0));
+          simdgroup_load(y[0],b+{dim}*i,{dim},ulong2(0,0));
+          simdgroup_load(y[1],b+{dim}*i+8,{dim},ulong2(0,0));
+          simdgroup_load(y[2],b+{dim}*i+8*2,{dim},ulong2(0,0));
+          simdgroup_load(y[3],b+{dim}*i+8*3,{dim},ulong2(0,0));
+
+          simdgroup_multiply_accumulate(acc[0][0], x[0], y[0], acc[0][0]);
+          simdgroup_multiply_accumulate(acc[0][1], x[0], y[1], acc[0][1]);
+          simdgroup_multiply_accumulate(acc[0][2], x[0], y[2], acc[0][2]);
+          simdgroup_multiply_accumulate(acc[0][3], x[0], y[3], acc[0][3]);
+          simdgroup_multiply_accumulate(acc[1][0], x[1], y[0], acc[1][0]);
+          simdgroup_multiply_accumulate(acc[1][1], x[1], y[1], acc[1][1]);
+          simdgroup_multiply_accumulate(acc[1][2], x[1], y[2], acc[1][2]);
+          simdgroup_multiply_accumulate(acc[1][3], x[1], y[3], acc[1][3]);
+      }}
+      simdgroup_store(acc[0][0],res,{dim},ulong2(0,0));
+      simdgroup_store(acc[0][1],res+8,{dim},ulong2(0,0));
+      simdgroup_store(acc[1][0],res+{dim}*8,{dim},ulong2(0,0));
+      simdgroup_store(acc[1][1],res+{dim}*8+8,{dim},ulong2(0,0));
+      simdgroup_store(acc[0][2],res+8*2,{dim},ulong2(0,0));
+      simdgroup_store(acc[0][3],res+8*3,{dim},ulong2(0,0));
+      simdgroup_store(acc[1][2],res+{dim}*8+8*2,{dim},ulong2(0,0));
+      simdgroup_store(acc[1][3],res+{dim}*8+8*3,{dim},ulong2(0,0));      
     }}"""
 
     options = Metal.MTLCompileOptions.alloc().init()
@@ -51,34 +74,20 @@ def matmul(a,b):
     m = b_buffer.contents().as_buffer(b.nbytes)
     m[:] = bytes(b)
 
-    aRows = np.int32(aRows)
-    aCols = np.int32(aCols)
-    bCols = np.int32(bCols)
-    aRows_buffer = device.newBufferWithLength_options_(4 ,1)
-    aCols_buffer = device.newBufferWithLength_options_(4 ,1)
-    bCols_buffer = device.newBufferWithLength_options_(4 ,1)
-    for i in range(4):
-        aRows_buffer.contents().__setitem__(i,aRows.tobytes()[i].to_bytes(1,'big'))
-        aCols_buffer.contents().__setitem__(i,aCols.tobytes()[i].to_bytes(1,'big'))
-        bCols_buffer.contents().__setitem__(i,bCols.tobytes()[i].to_bytes(1,'big'))
+    dim = np.int32(dim)
+    dim_buffer = device.newBufferWithLength_options_(4 ,1)
 
-    res = np.empty([aRows, bCols]).astype(np.float32).flatten()
-    res_buffer = device.newBufferWithLength_options_(res.nbytes ,1)
+    res_buffer = device.newBufferWithLength_options_(a.nbytes ,1)
 
-    encoder.setBuffer_offset_atIndex_(a_buffer, 0, 0)
-    encoder.setBuffer_offset_atIndex_(b_buffer, 0, 1)
-    encoder.setBuffer_offset_atIndex_(aRows_buffer, 0, 2)
-    encoder.setBuffer_offset_atIndex_(aCols_buffer, 0, 3)
-    encoder.setBuffer_offset_atIndex_(bCols_buffer, 0, 4)
-    encoder.setBuffer_offset_atIndex_(res_buffer, 0, 5)
-    threadGroupSize = pipeline_state.maxTotalThreadsPerThreadgroup()
-    if aRows*bCols < threadGroupSize:
-        threadGroupSize = aRows*bCols
-    encoder.dispatchThreads_threadsPerThreadgroup_(Metal.MTLSizeMake(aRows*bCols,1,1), Metal.MTLSizeMake(threadGroupSize,1,1))
+    encoder.setBuffer_offset_atIndex_(res_buffer, 0, 0)
+    encoder.setBuffer_offset_atIndex_(a_buffer, 0, 1)
+    encoder.setBuffer_offset_atIndex_(b_buffer, 0, 2)
+    threadsPerGrid = Metal.MTLSizeMake(64,4,1)
+    threadsPerThreadGroup = Metal.MTLSizeMake(32,32,1)
+    encoder.dispatchThreadgroups_threadsPerThreadgroup_(threadsPerGrid, threadsPerThreadGroup) #1thread for now?
     encoder.endEncoding()
     command_buffer.commit()
     command_buffer.waitUntilCompleted()
-
-    output = np.asarray(res_buffer.contents().as_buffer(res.nbytes))
+    output = np.asarray(res_buffer.contents().as_buffer(a.nbytes))
     output = np.frombuffer(output, dtype=np.float32)
     return output
