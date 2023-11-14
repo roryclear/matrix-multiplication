@@ -19,9 +19,10 @@ def sum(a):
                         device const float *a,
                         uint3 gid [[threadgroup_position_in_grid]], uint3 lid [[thread_position_in_threadgroup]])
     {{
-        for(int i = 0; i < {dim*dim}; i++) {{
-            res[0] += a[i];
-        }}   
+        int x = lid.x * 2;
+        res[x] = a[x] + a[x+1];
+        threadgroup_barrier(mem_flags::mem_threadgroup);
+        res[x] = res[x] + res[x+2];
     }}"""
 
     options = Metal.MTLCompileOptions.alloc().init()
@@ -40,11 +41,12 @@ def sum(a):
     encoder.setBuffer_offset_atIndex_(res_buffer, 0, 0)
     encoder.setBuffer_offset_atIndex_(a_buffer, 0, 1)
     threadsPerGrid = Metal.MTLSizeMake(1,1,1)
-    threadsPerThreadGroup = Metal.MTLSizeMake(1,1,1)
+    threadsPerThreadGroup = Metal.MTLSizeMake(2,1,1)
     encoder.dispatchThreadgroups_threadsPerThreadgroup_(threadsPerGrid, threadsPerThreadGroup)
     encoder.endEncoding()
     command_buffer.commit()
     command_buffer.waitUntilCompleted()
     output = np.asarray(res_buffer.contents().as_buffer(size))
     output = np.frombuffer(output, dtype=np.float32)[0]
+    print(output)
     return output
