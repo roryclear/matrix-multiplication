@@ -5,7 +5,7 @@ import time
 import torch
 #import tensorflow as tf
 
-length = 2048
+length = 2
 
 a = np.ones((length, length),dtype=np.float32)
 fastest = None
