@@ -22,7 +22,7 @@ def sum(a):
         int x = lid.x * 2;
         res[x] = a[x] + a[x+1];
         threadgroup_barrier(mem_flags::mem_threadgroup);
-        for(int i = 2; i <= 512; i*=2) {{
+        for(int i = 2; i <= 1024; i*=2) {{
             if((x+i) < {dim})
             res[x] = res[x] + res[x+i];
             threadgroup_barrier(mem_flags::mem_threadgroup);
@@ -45,7 +45,7 @@ def sum(a):
     encoder.setBuffer_offset_atIndex_(res_buffer, 0, 0)
     encoder.setBuffer_offset_atIndex_(a_buffer, 0, 1)
     threadsPerGrid = Metal.MTLSizeMake(1,1,1)
-    threadsPerThreadGroup = Metal.MTLSizeMake(512,1,1)
+    threadsPerThreadGroup = Metal.MTLSizeMake(1024,1,1)
     encoder.dispatchThreadgroups_threadsPerThreadgroup_(threadsPerGrid, threadsPerThreadGroup)
     encoder.endEncoding()
     command_buffer.commit()

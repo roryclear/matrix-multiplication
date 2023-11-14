@@ -5,7 +5,7 @@ import time
 import torch
 #import tensorflow as tf
 
-length = 32*32
+length = 2048
 
 a = np.random.rand(length).astype(np.float32)
 fastest = None
