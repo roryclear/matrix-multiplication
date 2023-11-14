@@ -10,6 +10,7 @@ length = 2048
 a = np.random.rand(length,length).astype(np.float32)
 b = np.random.rand(length,length).astype(np.float32)
 
+
 answer = np.empty_like(a)
 
 b2 = np.zeros_like(b)
