@@ -21,10 +21,12 @@ def sum(a):
     {{
         int x = lid.x * 2;
         res[x] = a[x] + a[x+1];
+        res[x+2048] = a[x+2048] + a[x+1+2048];
         threadgroup_barrier(mem_flags::mem_threadgroup);
-        for(int i = 2; i <= 1024; i*=2) {{
+        for(int i = 2; i <= 2048; i*=2) {{
             if((x+i) < {dim})
             res[x] = res[x] + res[x+i];
+            res[x+2048] = res[x+2048] + res[x+i+2048];
             threadgroup_barrier(mem_flags::mem_threadgroup);
         }}
     }}"""
