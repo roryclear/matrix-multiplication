@@ -18,7 +18,10 @@ def sum(a):
     kernel void sum(device float *res,
                         device const float *a,
                         uint3 gid [[threadgroup_position_in_grid]], uint3 lid [[thread_position_in_threadgroup]])
-    {{   
+    {{
+        for(int i = 0; i < {dim*dim}; i++) {{
+            res[0] += a[i];
+        }}   
     }}"""
 
     options = Metal.MTLCompileOptions.alloc().init()
@@ -43,5 +46,5 @@ def sum(a):
     command_buffer.commit()
     command_buffer.waitUntilCompleted()
     output = np.asarray(res_buffer.contents().as_buffer(size))
-    output = np.frombuffer(output, dtype=np.float32)
+    output = np.frombuffer(output, dtype=np.float32)[0]
     return output
