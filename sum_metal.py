@@ -7,7 +7,7 @@ import struct
 device = Metal.MTLCreateSystemDefaultDevice()
 
 def sum(a):
-    dim = len(a)*len(a)
+    dim = len(a)
     mtl_queue = device.newCommandQueue()
     command_buffer = mtl_queue.commandBuffer()
     encoder = command_buffer.computeCommandEncoder()

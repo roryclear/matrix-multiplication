@@ -5,9 +5,9 @@ import time
 import torch
 #import tensorflow as tf
 
-length = 32
+length = 32*32
 
-a = np.random.rand(length,length).astype(np.float32)
+a = np.random.rand(length).astype(np.float32)
 fastest = None
 answer = None
 for i in range(20):
