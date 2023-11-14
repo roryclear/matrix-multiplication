@@ -5,7 +5,7 @@ import time
 import torch
 #import tensorflow as tf
 
-length = 4096*4
+length = 2048*2048
 
 a = np.random.rand(length).astype(np.float32)
 fastest = None
@@ -26,6 +26,7 @@ for _ in range(20):
 	if metal_time == None or t < metal_time:
 		metal_time = t
 print("--- metal\t%.5f seconds ---" % (metal_time))
+#probably slow due to memory order, <2x speed of single loop
 
 assert np.allclose(om, answer)
 print("passed")

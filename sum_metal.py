@@ -20,25 +20,17 @@ def sum(a):
                         uint3 gid [[threadgroup_position_in_grid]], uint3 lid [[thread_position_in_threadgroup]])
     {{
         int x = lid.x * 2;
-        res[x] = a[x] + a[x+1];
-        res[x+2048] = a[x+2048] + a[x+1+2048];
-        res[x+2048*2] = a[x+2048*2] + a[x+1+2048*2];
-        res[x+2048*3] = a[x+2048*3] + a[x+1+2048*3];
-        res[x+2048*4] = a[x+2048*4] + a[x+1+2048*4];
-        res[x+2048*5] = a[x+2048*5] + a[x+1+2048*5];
-        res[x+2048*6] = a[x+2048*6] + a[x+1+2048*6];
-        res[x+2048*7] = a[x+2048*7] + a[x+1+2048*7];
+        for(int i = 0; i < {dim}; i+=2048) {{
+            res[x+i] = a[x+i] + a[x+i+1];
+        }}
         threadgroup_barrier(mem_flags::mem_threadgroup);
         for(int i = 2; i <= {dim}/2; i*=2) {{
-            res[x] = res[x] + res[x+i];
-            res[x+2048] = res[x+2048] + res[x+i+2048];
-            res[x+2048*2] = res[x+2048*2] + res[x+i+2048*2];
-            res[x+2048*3] = res[x+2048*3] + res[x+i+2048*3];
-            res[x+2048*4] = res[x+2048*4] + res[x+i+2048*4];
-            res[x+2048*5] = res[x+2048*5] + res[x+i+2048*5];
-            res[x+2048*6] = res[x+2048*6] + res[x+i+2048*6];
-            res[x+2048*7] = res[x+2048*7] + res[x+i+2048*7];
+            for(int j = 0; j < {dim}; j+=2048) {{
+            if((x+i+j) < {dim}) {{
+            res[x+j] = res[x+j] + res[x+i+j];
+                }}
             threadgroup_barrier(mem_flags::mem_threadgroup);
+            }}
         }}
     }}"""
 
