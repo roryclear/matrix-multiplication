@@ -7,7 +7,7 @@ import struct
 device = Metal.MTLCreateSystemDefaultDevice()
 
 def sum(a):
-    dim = len(a)
+    dim = len(a)*len(a)
     mtl_queue = device.newCommandQueue()
     command_buffer = mtl_queue.commandBuffer()
     encoder = command_buffer.computeCommandEncoder()
@@ -22,7 +22,11 @@ def sum(a):
         int x = lid.x * 2;
         res[x] = a[x] + a[x+1];
         threadgroup_barrier(mem_flags::mem_threadgroup);
-        res[x] = res[x] + res[x+2];
+        for(int i = 2; i <= 512; i*=2) {{
+            if((x+i) < {dim})
+            res[x] = res[x] + res[x+i];
+            threadgroup_barrier(mem_flags::mem_threadgroup);
+        }}
     }}"""
 
     options = Metal.MTLCompileOptions.alloc().init()
@@ -31,7 +35,7 @@ def sum(a):
     pipeline_state, err = device.newComputePipelineStateWithFunction_error_(fxn, None)
     encoder.setComputePipelineState_(pipeline_state)
 
-    size = dim*dim*4
+    size = dim*4
     a_buffer = device.newBufferWithLength_options_(size ,1)
     m = a_buffer.contents().as_buffer(size)
     m[:] = bytes(a)
@@ -41,12 +45,11 @@ def sum(a):
     encoder.setBuffer_offset_atIndex_(res_buffer, 0, 0)
     encoder.setBuffer_offset_atIndex_(a_buffer, 0, 1)
     threadsPerGrid = Metal.MTLSizeMake(1,1,1)
-    threadsPerThreadGroup = Metal.MTLSizeMake(2,1,1)
+    threadsPerThreadGroup = Metal.MTLSizeMake(512,1,1)
     encoder.dispatchThreadgroups_threadsPerThreadgroup_(threadsPerGrid, threadsPerThreadGroup)
     encoder.endEncoding()
     command_buffer.commit()
     command_buffer.waitUntilCompleted()
     output = np.asarray(res_buffer.contents().as_buffer(size))
     output = np.frombuffer(output, dtype=np.float32)[0]
-    print(output)
     return output
