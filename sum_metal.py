@@ -22,11 +22,22 @@ def sum(a):
         int x = lid.x * 2;
         res[x] = a[x] + a[x+1];
         res[x+2048] = a[x+2048] + a[x+1+2048];
+        res[x+2048*2] = a[x+2048*2] + a[x+1+2048*2];
+        res[x+2048*3] = a[x+2048*3] + a[x+1+2048*3];
+        res[x+2048*4] = a[x+2048*4] + a[x+1+2048*4];
+        res[x+2048*5] = a[x+2048*5] + a[x+1+2048*5];
+        res[x+2048*6] = a[x+2048*6] + a[x+1+2048*6];
+        res[x+2048*7] = a[x+2048*7] + a[x+1+2048*7];
         threadgroup_barrier(mem_flags::mem_threadgroup);
-        for(int i = 2; i <= 2048; i*=2) {{
-            if((x+i) < {dim})
+        for(int i = 2; i <= {dim}/2; i*=2) {{
             res[x] = res[x] + res[x+i];
             res[x+2048] = res[x+2048] + res[x+i+2048];
+            res[x+2048*2] = res[x+2048*2] + res[x+i+2048*2];
+            res[x+2048*3] = res[x+2048*3] + res[x+i+2048*3];
+            res[x+2048*4] = res[x+2048*4] + res[x+i+2048*4];
+            res[x+2048*5] = res[x+2048*5] + res[x+i+2048*5];
+            res[x+2048*6] = res[x+2048*6] + res[x+i+2048*6];
+            res[x+2048*7] = res[x+2048*7] + res[x+i+2048*7];
             threadgroup_barrier(mem_flags::mem_threadgroup);
         }}
     }}"""

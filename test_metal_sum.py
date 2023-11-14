@@ -5,7 +5,7 @@ import time
 import torch
 #import tensorflow as tf
 
-length = 4096
+length = 4096*4
 
 a = np.random.rand(length).astype(np.float32)
 fastest = None
@@ -16,7 +16,6 @@ for i in range(20):
 	t = time.time() - start_time
 	if fastest == None or t < start_time:
 		fastest = t
-print(answer)
 print("--- numpy\t%.5f seconds ---" % (fastest))
 
 metal_time = None
