@@ -6,7 +6,7 @@ import struct
 device = Metal.MTLCreateSystemDefaultDevice()
 
 def sum(a):
-    #works on 4096
+    #works on 1024*32 and 1024*((N+2)* 4)
     dim = len(a)
     mtl_queue = device.newCommandQueue()
     command_buffer = mtl_queue.commandBuffer()
@@ -19,36 +19,25 @@ def sum(a):
                         device float *a,
                         uint3 gid [[threadgroup_position_in_grid]], uint3 lid [[thread_position_in_threadgroup]])
     {{
-        int x = lid.x * 4;
-        res[x] = a[x*2] + a[x*2 + 1];
-        res[x+1] = a[x*2+2] + a[x*2+2+1];
-        res[x+2] = a[x*2+4] + a[x*2+4+1];
-        res[x+3] = a[x*2+6] + a[x*2+6+1];
+        int x = lid.x * {dim}/1024; //max threads
+        for(int i = 0; i < {dim}/1024; i++) {{
+            res[x+i] = a[x*2+2*i] + a[x*2+2*i+1];
+        }}
         for(int i = {dim}/2; i > 2; i*=0.25) {{
             threadgroup_barrier(mem_flags::mem_threadgroup);
             if(x < i) {{
-                a[x] = res[x*2] + res[x*2 + 1];
-                a[x+1] = res[x*2+2] + res[x*2+2+1];
-                a[x+2] = res[x*2+4] + res[x*2+4+1];
-                a[x+3] = res[x*2+6] + res[x*2+6+1];
+                for(int j = 0; j < {dim}/1024; j++) {{
+                    a[x+j] = res[x*2+2*j] + res[x*2+2*j+1];
+                }}
             }}
+            
             threadgroup_barrier(mem_flags::mem_threadgroup);
             if(x < i/2) {{
-                res[x] = a[x*2] + a[x*2 + 1];
-                res[x+1] = a[x*2+2] + a[x*2+2+1];
-                res[x+2] = a[x*2+4] + a[x*2+4+1];
-                res[x+3] = a[x*2+6] + a[x*2+6+1];
+                for(int j = 0; j < {dim}/1024; j++) {{
+                    res[x+j] = a[x*2+2*j] + a[x*2+2*j+1];
+                }}  
             }}
-        }}
-        threadgroup_barrier(mem_flags::mem_threadgroup);
-        if(x < 4) {{
-                a[x] = res[x*2] + res[x*2 + 1];
-                a[x+1] = res[x*2+2] + res[x*2+2+1];
-                a[x+2] = res[x*2+4] + res[x*2+4+1];
-                a[x+3] = res[x*2+6] + res[x*2+6+1];
-            }}
-        threadgroup_barrier(mem_flags::mem_threadgroup);
-        res[0] = a[0] + a[1];
+        }}  
     }}"""
 
     options = Metal.MTLCompileOptions.alloc().init()
