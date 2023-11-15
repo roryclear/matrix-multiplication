@@ -6,7 +6,7 @@ import struct
 device = Metal.MTLCreateSystemDefaultDevice()
 
 def sum(a):
-    #works on 1024*32 and 1024*((N+2)* 4)
+    #works on 1024*((N+2)*4)
     dim = len(a)
     mtl_queue = device.newCommandQueue()
     command_buffer = mtl_queue.commandBuffer()
@@ -37,7 +37,15 @@ def sum(a):
                     res[x+j] = a[x*2+2*j] + a[x*2+2*j+1];
                 }}  
             }}
-        }}  
+        }}
+        threadgroup_barrier(mem_flags::mem_threadgroup); //todo add if, dont always need 
+        if(x < 2) {{
+            for(int j = 0; j < {dim}/1024; j++) {{
+                a[x+j] = res[x*2+2*j] + res[x*2+2*j+1];
+            }}
+        }}
+        threadgroup_barrier(mem_flags::mem_threadgroup);
+        res[0] = a[0];
     }}"""
 
     options = Metal.MTLCompileOptions.alloc().init()
@@ -63,5 +71,4 @@ def sum(a):
     command_buffer.waitUntilCompleted()
     output = np.asarray(res_buffer.contents().as_buffer(size))
     output = np.frombuffer(output, dtype=np.float32)[0]
-    print(output)
     return output
