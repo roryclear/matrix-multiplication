@@ -25,7 +25,7 @@ def sum(a):
         res[x+2] = a[x*2+4] + a[x*2+4+1];
         res[x+3] = a[x*2+6] + a[x*2+6+1];
         threadgroup_barrier(mem_flags::mem_threadgroup);
-        for(int i = {dim}/; i > 2; i*=0.25) {{
+        for(int i = {dim}/2; i > 2; i*=0.25) {{
             if(x < i) {{
                 a[x] = res[x*2] + res[x*2 + 1];
                 a[x+1] = res[x*2+2] + res[x*2+2+1];
