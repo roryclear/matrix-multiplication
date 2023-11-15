@@ -20,31 +20,20 @@ def sum(a):
                         uint3 gid [[threadgroup_position_in_grid]], uint3 lid [[thread_position_in_threadgroup]])
     {{
         int x = lid.x * {dim}/1024; //max threads
-        for(int i = 0; i < {dim}/1024; i++) {{
-            res[x+i] = a[x*2+2*i] + a[x*2+2*i+1];
-        }}
-        for(int i = {dim}/2; i > 2; i*=0.25) {{
-            threadgroup_barrier(mem_flags::mem_threadgroup);
+        for(int i = {dim}; i > 2; i*=0.25) {{
             if(x < i) {{
-                for(int j = 0; j < {dim}/1024; j++) {{
-                    a[x+j] = res[x*2+2*j] + res[x*2+2*j+1];
-                }}
-            }}
-            
-            threadgroup_barrier(mem_flags::mem_threadgroup);
-            if(x < i/2) {{
                 for(int j = 0; j < {dim}/1024; j++) {{
                     res[x+j] = a[x*2+2*j] + a[x*2+2*j+1];
                 }}  
             }}
-        }}
-        threadgroup_barrier(mem_flags::mem_threadgroup); //todo add if, dont always need 
-        if(x < 2) {{
-            for(int j = 0; j < {dim}/1024; j++) {{
-                a[x+j] = res[x*2+2*j] + res[x*2+2*j+1];
+
+            if(x < i/2) {{
+                for(int j = 0; j < {dim}/1024; j++) {{
+                    a[x+j] = res[x*2+2*j] + res[x*2+2*j+1];
+                }}
             }}
         }}
-        threadgroup_barrier(mem_flags::mem_threadgroup);
+        threadgroup_barrier(mem_flags::mem_threadgroup); //todo add if, dont always need 
         res[0] = a[0];
     }}"""
 
