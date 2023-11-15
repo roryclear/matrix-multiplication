@@ -3,10 +3,10 @@ import Metal
 import Foundation
 import numpy as np
 import struct
-
 device = Metal.MTLCreateSystemDefaultDevice()
 
 def sum(a):
+    #works on 1024*((N+2)*4)
     dim = len(a)
     mtl_queue = device.newCommandQueue()
     command_buffer = mtl_queue.commandBuffer()
@@ -16,22 +16,25 @@ def sum(a):
     #include <metal_simdgroup_matrix>
     using namespace metal;
     kernel void sum(device float *res,
-                        device const float *a,
+                        device float *a,
                         uint3 gid [[threadgroup_position_in_grid]], uint3 lid [[thread_position_in_threadgroup]])
     {{
-        int x = lid.x * 2;
-        for(int i = 0; i < {dim}; i+=2048) {{
-            res[x+i] = a[x+i] + a[x+i+1];
-        }}
-        threadgroup_barrier(mem_flags::mem_threadgroup);
-        for(int i = 2; i <= {dim}/2; i*=2) {{
-            for(int j = 0; j < {dim}; j+=2048) {{
-            if((x+i+j) < {dim}) {{
-            res[x+j] = res[x+j] + res[x+i+j];
+        int x = lid.x * {dim}/1024; //max threads
+        for(int i = {dim}; i > 2; i*=0.25) {{
+            if(x < i) {{
+                for(int j = 0; j < {dim}/1024; j++) {{
+                    res[x+j] = a[x*2+2*j] + a[x*2+2*j+1];
+                }}  
+            }}
+
+            if(x < i/2) {{
+                for(int j = 0; j < {dim}/1024; j++) {{
+                    a[x+j] = res[x*2+2*j] + res[x*2+2*j+1];
                 }}
-            threadgroup_barrier(mem_flags::mem_threadgroup);
             }}
         }}
+        threadgroup_barrier(mem_flags::mem_threadgroup); //todo add if, dont always need 
+        res[0] = a[0];
     }}"""
 
     options = Metal.MTLCompileOptions.alloc().init()
