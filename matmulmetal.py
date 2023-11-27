@@ -41,8 +41,8 @@ def matmul(a,b):
 
           simdgroup_load(y[0],b+{dim}*i,{dim},ulong2(0,0));
           simdgroup_load(y[1],b+{dim}*i+8,{dim},ulong2(0,0));
-          simdgroup_load(y[2],b+{dim}*i+8*2,{dim},ulong2(0,0));
-          simdgroup_load(y[3],b+{dim}*i+8*3,{dim},ulong2(0,0));
+          simdgroup_load(y[2],b+{dim}*i+16,{dim},ulong2(0,0));
+          simdgroup_load(y[3],b+{dim}*i+24,{dim},ulong2(0,0));
 
           simdgroup_multiply_accumulate(acc[0][0], x[0], y[0], acc[0][0]);
           simdgroup_multiply_accumulate(acc[0][1], x[0], y[1], acc[0][1]);
@@ -66,23 +66,23 @@ def matmul(a,b):
       }}
       simdgroup_store(acc[0][0],res,{dim},ulong2(0,0));
       simdgroup_store(acc[0][1],res+8,{dim},ulong2(0,0));
-      simdgroup_store(acc[0][2],res+8*2,{dim},ulong2(0,0));
-      simdgroup_store(acc[0][3],res+8*3,{dim},ulong2(0,0));
+      simdgroup_store(acc[0][2],res+16,{dim},ulong2(0,0));
+      simdgroup_store(acc[0][3],res+24,{dim},ulong2(0,0));
 
       simdgroup_store(acc[1][0],res+{dim}*8,{dim},ulong2(0,0));
       simdgroup_store(acc[1][1],res+{dim}*8+8,{dim},ulong2(0,0));
-      simdgroup_store(acc[1][2],res+{dim}*8+8*2,{dim},ulong2(0,0));
-      simdgroup_store(acc[1][3],res+{dim}*8+8*3,{dim},ulong2(0,0));
+      simdgroup_store(acc[1][2],res+{dim}*8+16,{dim},ulong2(0,0));
+      simdgroup_store(acc[1][3],res+{dim}*8+24,{dim},ulong2(0,0));
 
       simdgroup_store(acc[2][0],res+{dim}*16,{dim},ulong2(0,0));
       simdgroup_store(acc[2][1],res+{dim}*16+8,{dim},ulong2(0,0));
-      simdgroup_store(acc[2][2],res+{dim}*16+8*2,{dim},ulong2(0,0));
-      simdgroup_store(acc[2][3],res+{dim}*16+8*3,{dim},ulong2(0,0));
+      simdgroup_store(acc[2][2],res+{dim}*16+16,{dim},ulong2(0,0));
+      simdgroup_store(acc[2][3],res+{dim}*16+24,{dim},ulong2(0,0));
 
       simdgroup_store(acc[3][0],res+{dim}*24,{dim},ulong2(0,0));
       simdgroup_store(acc[3][1],res+{dim}*24+8,{dim},ulong2(0,0));
-      simdgroup_store(acc[3][2],res+{dim}*24+8*2,{dim},ulong2(0,0));
-      simdgroup_store(acc[3][3],res+{dim}*24+8*3,{dim},ulong2(0,0));       
+      simdgroup_store(acc[3][2],res+{dim}*24+16,{dim},ulong2(0,0));
+      simdgroup_store(acc[3][3],res+{dim}*24+24,{dim},ulong2(0,0));       
     }}"""
 
     options = Metal.MTLCompileOptions.alloc().init()
