@@ -20,8 +20,8 @@ def matmul(a,b):
                         device const float *b,
                         uint3 gid [[threadgroup_position_in_grid]], uint3 lid [[thread_position_in_threadgroup]])
     {{
-       res += gid.x * 4 * 8 + (lid.y + gid.y * 2) * 8*4*{dim};
-       a += (lid.y + gid.y * 2) * 8*4*{dim};
+       res += gid.x * 4 * 8 + (lid.y + gid.y) * 8*4*{dim};
+       a += (lid.y + gid.y) * 8*4*{dim};
        b += gid.x * 8*4;
 
       simdgroup_float8x8 x[4];
@@ -105,8 +105,8 @@ def matmul(a,b):
     encoder.setBuffer_offset_atIndex_(res_buffer, 0, 0)
     encoder.setBuffer_offset_atIndex_(a_buffer, 0, 1)
     encoder.setBuffer_offset_atIndex_(b_buffer, 0, 2)
-    threadsPerGrid = Metal.MTLSizeMake(64,32,1)
-    threadsPerThreadGroup = Metal.MTLSizeMake(32,2,1)
+    threadsPerGrid = Metal.MTLSizeMake(64,64,1)
+    threadsPerThreadGroup = Metal.MTLSizeMake(32,1,1)
     encoder.dispatchThreadgroups_threadsPerThreadgroup_(threadsPerGrid, threadsPerThreadGroup)
     encoder.endEncoding()
     command_buffer.commit()
