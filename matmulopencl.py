@@ -2,10 +2,8 @@ import numpy as np
 import pyopencl as cl
 
 def matmul(a,b):
-	aRows = a.shape[0]
-	aCols = a.shape[1]
-	bRows = b.shape[0]
-	bCols = b.shape[1]
+	dim = len(a)
+	#print("dim =",dim)
 	a = a.flatten()
 	b = b.flatten()
 	platform = cl.get_platforms()
@@ -17,29 +15,29 @@ def matmul(a,b):
 	a_g = cl.Buffer(ctx, mf.READ_ONLY | mf.COPY_HOST_PTR, hostbuf=a)
 	b_g = cl.Buffer(ctx, mf.READ_ONLY | mf.COPY_HOST_PTR, hostbuf=b)
 
-	res_np = np.empty([aRows, bCols]).astype(np.float32).flatten()
-	res_g = cl.Buffer(ctx, mf.WRITE_ONLY, (aRows * bCols * 4))
+	res_np = np.empty([dim, dim]).astype(np.float32).flatten()
+	res_g = cl.Buffer(ctx, mf.WRITE_ONLY, (dim * dim * 4))
 
-	prg = cl.Program(ctx, """
+	prg = cl.Program(ctx, f"""
 	__kernel void matmul(
-	    __global const float *a, __global const float *b, int aRows, int aCols, int bCols, __global float *res)
-	{
-	  int gid = get_global_id(0);
-	  int row = gid / bCols;
-	  int col = gid % bCols;
+	    __global const float *a, __global const float *b, __global float *res)
+	{{
+	  int gid = get_global_id(0) ;
+	  int row = gid / {dim};
+	  int col = gid % {dim};
 	  float total = 0;
-	  if(row < aRows && col < bCols) 
-	  {
-	    for(int i = 0; i < aCols; i++)
-	    {
-	      total += a[row * aCols + i] * b[col + i * bCols];
-	    }
-	    res[row * bCols + col] = total;
-	  }
-	}
+	  if(row < {dim} && col < {dim}) 
+	  {{
+	    for(int i = 0; i < {dim}; i++)
+	    {{
+	      total += a[row * {dim} + i] * b[col + i * {dim}];
+	    }}
+	    res[row * {dim} + col] = total;
+	  }}
+	}}
 	""").build()
 	
 	knl = prg.matmul
-	knl(queue, (aRows*bCols,1), None, a_g, b_g, np.int32(aRows), np.int32(aCols), np.int32(bCols), res_g) #todo check shape
+	knl(queue, (dim*dim,1), None, a_g, b_g, res_g) #todo check shape
 	cl.enqueue_copy(queue, res_np, res_g)
 	return res_np
