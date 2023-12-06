@@ -22,22 +22,18 @@ def matmul(a,b):
 	__kernel void matmul(
 	    __global const float *a, __global const float *b, __global float *res)
 	{{
-	  int gid = get_global_id(0) ;
-	  int row = gid / {dim};
-	  int col = gid % {dim};
-	  float total = 0;
-	  if(row < {dim} && col < {dim}) 
-	  {{
-	    for(int i = 0; i < {dim}; i++)
-	    {{
-	      total += a[row * {dim} + i] * b[col + i * {dim}];
-	    }}
-	    res[row * {dim} + col] = total;
-	  }}
+	 for(int y = 0; y < {dim}; y++) {{
+	 	for(int k = 0; k < {dim}; k++) {{
+	 		float lnum = a[y * {dim} + k];
+	 		for(int x = 0; x < {dim}; x++) {{
+	 			res[y * {dim} + x] += lnum * b[k * {dim} + x];
+	 		}}
+	 	}}
+	 }}
 	}}
 	""").build()
 	
 	knl = prg.matmul
-	knl(queue, (dim*dim,1), None, a_g, b_g, res_g) #todo check shape
+	knl(queue, (1,1), None, a_g, b_g, res_g) #todo check shape
 	cl.enqueue_copy(queue, res_np, res_g)
 	return res_np

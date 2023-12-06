@@ -4,7 +4,7 @@ import time
 import torch
 #import tensorflow as tf
 
-length = 2048
+length = 128
 
 a = np.random.rand(length,length).astype(np.float32)
 b = np.random.rand(length,length).astype(np.float32)
@@ -15,7 +15,7 @@ answer = np.empty_like(a)
 b2 = np.zeros_like(b)
 
 metal_time = None
-for _ in range(20):
+for _ in range(1):
 	start_time = time.time()
 	oo = mmo.matmul(a,b)
 	t = time.time() - start_time
