@@ -22,14 +22,15 @@ def matmul(a,b):
 	__kernel void matmul(
 	    __global const float *a, __global const float *b, __global float *res)
 	{{
-	 for(int y = 0; y < {dim}; y++) {{
-	 	for(int k = 0; k < {dim}; k++) {{
-	 		float lnum = a[y * {dim} + k];
-	 		for(int x = 0; x < {dim}; x++) {{
-	 			res[y * {dim} + x] += lnum * b[k * {dim} + x];
-	 		}}
-	 	}}
-	 }}
+	for(int y = 0; y < {dim}; y++) {{
+		for(int x = 0; x < {dim}; x++) {{
+			float total = 0;
+			for(int k = 0; k < {dim}; k++) {{
+				total += a[y * {dim} + k] * b[x * {dim} + k];
+			}}
+			res[y * {dim} + x] = total;
+		}}
+	}}
 	}}
 	""").build()
 	

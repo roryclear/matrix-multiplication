@@ -6,21 +6,27 @@ import torch
 
 length = 128
 
-a = np.random.rand(length,length).astype(np.float32)
-b = np.random.rand(length,length).astype(np.float32)
+#a = np.random.rand(length,length).astype(np.float32)
+#b = np.random.rand(length,length).astype(np.float32)
+a = np.ones((length,length),dtype=np.float32)
+b = np.ones((length,length),dtype=np.float32)
 
 
 answer = np.empty_like(a)
 
-b2 = np.zeros_like(b)
+br = np.zeros_like(b)
+for x in range(length):
+	for y in range(length):
+		br[x][y] = b[y][x]
 
 opencl_time = None
 for _ in range(1):
 	start_time = time.time()
-	oo = mmo.matmul(a,b)
+	oo = mmo.matmul(a,br)
 	t = time.time() - start_time
 	if opencl_time == None or t < opencl_time:
 		opencl_time = t
+		
 print("--- opencl\t%.5f seconds ---" % (opencl_time))
 
 fastest = None
