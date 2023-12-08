@@ -14,14 +14,14 @@ answer = np.empty_like(a)
 
 b2 = np.zeros_like(b)
 
-metal_time = None
+opencl_time = None
 for _ in range(1):
 	start_time = time.time()
 	oo = mmo.matmul(a,b)
 	t = time.time() - start_time
-	if metal_time == None or t < metal_time:
-		metal_time = t
-print("--- opencl\t%.5f seconds ---" % (metal_time))
+	if opencl_time == None or t < opencl_time:
+		opencl_time = t
+print("--- opencl\t%.5f seconds ---" % (opencl_time))
 
 fastest = None
 for _ in range(20):
