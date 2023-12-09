@@ -21,7 +21,7 @@ def matmul(a,b):
 	res_np = np.empty([dim, dim]).astype(np.float32).flatten()
 	res_g = cl.Buffer(ctx, mf.WRITE_ONLY, (dim * dim * 4))
 
-	local_0 = 8
+	local_0 = 256
 	prg = cl.Program(ctx, f"""
 	__kernel void matmul(
 	    __global const float *a, __global const float *b, __global float *res)
