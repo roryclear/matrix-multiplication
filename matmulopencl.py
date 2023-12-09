@@ -31,21 +31,21 @@ def matmul(a,b):
 	int endY = startY + ({dim} / {local_0});
 	for(int y = startY; y < endY; y+={ys}) {{
 		for(int x = 0; x < {dim}; x+={xs}) {{
-			float acc[4]; //xs
-			acc[0] = 0;
-			acc[1] = 0;
-			acc[2] = 0;
-			acc[3] = 0;
+			float acc[2][2];
+			acc[0][0] = 0;
+			acc[0][1] = 0;
+			acc[1][0] = 0;
+			acc[1][1] = 0;
 			for(int k = 0; k < {dim}; k++) {{
-				acc[0] += a[y * {dim} + k] * b[x * {dim} + k];
-				acc[1] += a[y * {dim} + k] * b[(x + 1) * {dim} + k];
-				acc[2] += a[(y + 1) * {dim} + k] * b[(x) * {dim} + k];
-				acc[3] += a[(y + 1) * {dim} + k] * b[(x + 1) * {dim} + k];
+				acc[0][0] += a[y * {dim} + k] * b[x * {dim} + k];
+				acc[0][1] += a[y * {dim} + k] * b[(x + 1) * {dim} + k];
+				acc[1][0] += a[(y + 1) * {dim} + k] * b[(x) * {dim} + k];
+				acc[1][1] += a[(y + 1) * {dim} + k] * b[(x + 1) * {dim} + k];
 			}}
-			res[y * {dim} + x] = acc[0];
-			res[y * {dim} + x + 1] = acc[1];
-			res[(y + 1) * {dim} + x] = acc[2];
-			res[(y + 1) * {dim} + x + 1] = acc[3];
+			res[y * {dim} + x] = acc[0][0];
+			res[y * {dim} + x + 1] = acc[0][1];
+			res[(y + 1) * {dim} + x] = acc[1][0];
+			res[(y + 1) * {dim} + x + 1] = acc[1][1];
 		}}
 	}}
 	}}
