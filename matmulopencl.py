@@ -32,13 +32,14 @@ def matmul(a,b):
 	for(int y = startY; y < endY; y+={ys}) {{
 		for(int x = 0; x < {dim}; x+={xs}) {{
 			for(int iy = y; iy < (y+{ys}); iy++) {{
-				for(int ix = x; ix < (x+{xs}); ix++) {{
-					float total = 0;
-					for(int k = 0; k < {dim}; k++) {{
-						total += a[iy * {dim} + k] * b[ix * {dim} + k];
-					}}
-					res[iy * {dim} + ix] = total;
+				float total = 0;
+				float total2 = 0;
+				for(int k = 0; k < {dim}; k++) {{
+					total += a[iy * {dim} + k] * b[x * {dim} + k];
+					total2 += a[iy * {dim} + k] * b[(x + 1) * {dim} + k];
 				}}
+				res[iy * {dim} + x] = total;
+				res[iy * {dim} + x + 1] = total2;
 			}}
 		}}
 	}}
