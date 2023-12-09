@@ -4,7 +4,7 @@ import pyopencl as cl
 def matmul(a,b):
 	dim = len(a)
 	#print("dim =",dim)
-	ys = 32;
+	ys = 2;
 	xs = 2;
 
 	a = a.flatten()
@@ -31,16 +31,21 @@ def matmul(a,b):
 	int endY = startY + ({dim} / {local_0});
 	for(int y = startY; y < endY; y+={ys}) {{
 		for(int x = 0; x < {dim}; x+={xs}) {{
-			for(int iy = y; iy < (y+{ys}); iy++) {{
-				float total = 0;
-				float total2 = 0;
-				for(int k = 0; k < {dim}; k++) {{
-					total += a[iy * {dim} + k] * b[x * {dim} + k];
-					total2 += a[iy * {dim} + k] * b[(x + 1) * {dim} + k];
-				}}
-				res[iy * {dim} + x] = total;
-				res[iy * {dim} + x + 1] = total2;
+			float acc[4]; //xs
+			acc[0] = 0;
+			acc[1] = 0;
+			acc[2] = 0;
+			acc[3] = 0;
+			for(int k = 0; k < {dim}; k++) {{
+				acc[0] += a[y * {dim} + k] * b[x * {dim} + k];
+				acc[1] += a[y * {dim} + k] * b[(x + 1) * {dim} + k];
+				acc[2] += a[(y + 1) * {dim} + k] * b[(x) * {dim} + k];
+				acc[3] += a[(y + 1) * {dim} + k] * b[(x + 1) * {dim} + k];
 			}}
+			res[y * {dim} + x] = acc[0];
+			res[y * {dim} + x + 1] = acc[1];
+			res[(y + 1) * {dim} + x] = acc[2];
+			res[(y + 1) * {dim} + x + 1] = acc[3];
 		}}
 	}}
 	}}
