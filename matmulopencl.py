@@ -4,8 +4,8 @@ import pyopencl as cl
 def matmul(a,b):
 	dim = len(a)
 	#print("dim =",dim)
-	ys = 2;
-	xs = 4;
+	ys = 128;
+	xs = 2;
 
 	a = a.flatten()
 	b = b.flatten()
