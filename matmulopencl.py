@@ -25,7 +25,10 @@ def matmul(a,b):
 	__kernel void matmul(
 	    __global const float *a, __global const float *b, __global float *res)
 	{{
-	for(int y = 0; y < {dim}; y+={ys}) {{
+	int lidx0 = get_local_id(0);
+	int startY = lidx0 * ({dim} / 2);
+	int endY = startY + ({dim} / 2);
+	for(int y = startY; y < endY; y+={ys}) {{
 		for(int x = 0; x < {dim}; x+={xs}) {{
 			for(int iy = y; iy < (y+{ys}); iy++) {{
 				for(int ix = x; ix < (x+{xs}); ix++) {{
@@ -42,6 +45,6 @@ def matmul(a,b):
 	""").build()
 	
 	knl = prg.matmul
-	knl(queue, (1,1), None, a_g, b_g, res_g) #todo check shape
+	knl(queue, (2,1), (2,1), a_g, b_g, res_g) #todo check shape
 	cl.enqueue_copy(queue, res_np, res_g)
 	return res_np
