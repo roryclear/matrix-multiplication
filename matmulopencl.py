@@ -4,7 +4,7 @@ import pyopencl as cl
 def matmul(a,b):
 	dim = len(a)
 	#print("dim =",dim)
-	ys = 128;
+	ys = 32;
 	xs = 2;
 
 	a = a.flatten()
