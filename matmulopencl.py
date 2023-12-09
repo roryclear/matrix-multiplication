@@ -4,6 +4,9 @@ import pyopencl as cl
 def matmul(a,b):
 	dim = len(a)
 	#print("dim =",dim)
+	ys = 2;
+	xs = 4;
+
 	a = a.flatten()
 	b = b.flatten()
 	platform = cl.get_platforms()
@@ -22,13 +25,17 @@ def matmul(a,b):
 	__kernel void matmul(
 	    __global const float *a, __global const float *b, __global float *res)
 	{{
-	for(int y = 0; y < {dim}; y++) {{
-		for(int x = 0; x < {dim}; x++) {{
-			float total = 0;
-			for(int k = 0; k < {dim}; k++) {{
-				total += a[y * {dim} + k] * b[x * {dim} + k];
+	for(int y = 0; y < {dim}; y+={ys}) {{
+		for(int x = 0; x < {dim}; x+={xs}) {{
+			for(int iy = y; iy < (y+{ys}); iy++) {{
+				for(int ix = x; ix < (x+{xs}); ix++) {{
+					float total = 0;
+					for(int k = 0; k < {dim}; k++) {{
+						total += a[iy * {dim} + k] * b[ix * {dim} + k];
+					}}
+					res[iy * {dim} + ix] = total;
+				}}
 			}}
-			res[y * {dim} + x] = total;
 		}}
 	}}
 	}}

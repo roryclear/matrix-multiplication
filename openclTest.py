@@ -4,7 +4,7 @@ import time
 import torch
 #import tensorflow as tf
 
-length = 128
+length = 512
 
 #a = np.random.rand(length,length).astype(np.float32)
 #b = np.random.rand(length,length).astype(np.float32)
