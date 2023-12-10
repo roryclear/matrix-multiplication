@@ -20,7 +20,7 @@ for x in range(length):
 		br[x][y] = b[y][x]
 
 opencl_time = None
-for _ in range(1):
+for _ in range(20):
 	start_time = time.time()
 	oo = mmo.matmul(a,br)
 	t = time.time() - start_time
