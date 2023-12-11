@@ -143,3 +143,114 @@ def matmul(a,b):
 	knl(queue, (local_0,1), (local_0,1), a_g, b_g, res_g) #todo check shape
 	cl.enqueue_copy(queue, res_np, res_g)
 	return res_np
+
+def matmul2(a,b):
+  dim = len(a)
+  a = a.flatten()
+  b = b.flatten()
+  a_g = cl.Buffer(ctx, mf.READ_ONLY | mf.COPY_HOST_PTR, hostbuf=a)
+  b_g = cl.Buffer(ctx, mf.READ_ONLY | mf.COPY_HOST_PTR, hostbuf=b)
+
+  res_np = np.empty([dim, dim]).astype(np.float32).flatten()
+  res_g = cl.Buffer(ctx, mf.WRITE_ONLY, (dim * dim * 4))
+
+  prg = cl.Program(ctx, f"""
+  __kernel void matmul(
+      __global const float *a, __global const float *b, __global float *res)
+  {{
+    float4 acc0 = (float4)(0.0f,0.0f,0.0f,0.0f);
+    float4 acc1 = (float4)(0.0f,0.0f,0.0f,0.0f);
+    float4 acc2 = (float4)(0.0f,0.0f,0.0f,0.0f);
+    float4 acc3 = (float4)(0.0f,0.0f,0.0f,0.0f);
+    a+=get_local_id(1)*4*{dim};
+    b+=get_local_id(0)*4;
+    res+=get_local_id(1)*4*{dim} + get_local_id(0)*4;
+    for(int k = 0; k < 2; k++) {{
+      float4 a0 = (float4)(*((__global float4*)(a+0+k*4)));
+      float4 a1 = (float4)(*((__global float4*)(a+{dim}+k*4)));
+      float4 a2 = (float4)(*((__global float4*)(a+{dim}*2+k*4)));
+      float4 a3 = (float4)(*((__global float4*)(a+{dim}*3+k*4)));
+      float4 b0 = (float4)(*((__global float4*)(b+0+k*4*{dim})));
+      float4 b1 = (float4)(*((__global float4*)(b+{dim}+k*4*{dim})));
+      float4 b2 = (float4)(*((__global float4*)(b+{dim}*2+k*4*{dim})));
+      float4 b3 = (float4)(*((__global float4*)(b+{dim}*3+k*4*{dim})));
+
+      (acc0).x = mad((a0).x,(b0).x,(acc0).x);
+      (acc0).x = mad((a0).y,(b1).x,(acc0).x);
+      (acc0).x = mad((a0).z,(b2).x,(acc0).x);
+      (acc0).x = mad((a0).w,(b3).x,(acc0).x);
+      (acc0).y = mad((a0).x,(b0).y,(acc0).y);
+      (acc0).y = mad((a0).y,(b1).y,(acc0).y);
+      (acc0).y = mad((a0).z,(b2).y,(acc0).y);
+      (acc0).y = mad((a0).w,(b3).y,(acc0).y);
+      (acc0).z = mad((a0).x,(b0).z,(acc0).z);
+      (acc0).z = mad((a0).y,(b1).z,(acc0).z);
+      (acc0).z = mad((a0).z,(b2).z,(acc0).z);
+      (acc0).z = mad((a0).w,(b3).z,(acc0).z);
+      (acc0).w = mad((a0).x,(b0).w,(acc0).w);
+      (acc0).w = mad((a0).y,(b1).w,(acc0).w);
+      (acc0).w = mad((a0).z,(b2).w,(acc0).w);
+      (acc0).w = mad((a0).w,(b3).w,(acc0).w);
+
+      (acc1).x = mad((a1).x,(b0).x,(acc1).x);
+      (acc1).x = mad((a1).y,(b1).x,(acc1).x);
+      (acc1).x = mad((a1).z,(b2).x,(acc1).x);
+      (acc1).x = mad((a1).w,(b3).x,(acc1).x);
+      (acc1).y = mad((a1).x,(b0).y,(acc1).y);
+      (acc1).y = mad((a1).y,(b1).y,(acc1).y);
+      (acc1).y = mad((a1).z,(b2).y,(acc1).y);
+      (acc1).y = mad((a1).w,(b3).y,(acc1).y);
+      (acc1).z = mad((a1).x,(b0).z,(acc1).z);
+      (acc1).z = mad((a1).y,(b1).z,(acc1).z);
+      (acc1).z = mad((a1).z,(b2).z,(acc1).z);
+      (acc1).z = mad((a1).w,(b3).z,(acc1).z);
+      (acc1).w = mad((a1).x,(b0).w,(acc1).w);
+      (acc1).w = mad((a1).y,(b1).w,(acc1).w);
+      (acc1).w = mad((a1).z,(b2).w,(acc1).w);
+      (acc1).w = mad((a1).w,(b3).w,(acc1).w);
+
+      (acc2).x = mad((a2).x,(b0).x,(acc2).x);
+      (acc2).x = mad((a2).y,(b1).x,(acc2).x);
+      (acc2).x = mad((a2).z,(b2).x,(acc2).x);
+      (acc2).x = mad((a2).w,(b3).x,(acc2).x);
+      (acc2).y = mad((a2).x,(b0).y,(acc2).y);
+      (acc2).y = mad((a2).y,(b1).y,(acc2).y);
+      (acc2).y = mad((a2).z,(b2).y,(acc2).y);
+      (acc2).y = mad((a2).w,(b3).y,(acc2).y);
+      (acc2).z = mad((a2).x,(b0).z,(acc2).z);
+      (acc2).z = mad((a2).y,(b1).z,(acc2).z);
+      (acc2).z = mad((a2).z,(b2).z,(acc2).z);
+      (acc2).z = mad((a2).w,(b3).z,(acc2).z);
+      (acc2).w = mad((a2).x,(b0).w,(acc2).w);
+      (acc2).w = mad((a2).y,(b1).w,(acc2).w);
+      (acc2).w = mad((a2).z,(b2).w,(acc2).w);
+      (acc2).w = mad((a2).w,(b3).w,(acc2).w);
+
+      (acc3).x = mad((a3).x,(b0).x,(acc3).x);
+      (acc3).x = mad((a3).y,(b1).x,(acc3).x);
+      (acc3).x = mad((a3).z,(b2).x,(acc3).x);
+      (acc3).x = mad((a3).w,(b3).x,(acc3).x);
+      (acc3).y = mad((a3).x,(b0).y,(acc3).y);
+      (acc3).y = mad((a3).y,(b1).y,(acc3).y);
+      (acc3).y = mad((a3).z,(b2).y,(acc3).y);
+      (acc3).y = mad((a3).w,(b3).y,(acc3).y);
+      (acc3).z = mad((a3).x,(b0).z,(acc3).z);
+      (acc3).z = mad((a3).y,(b1).z,(acc3).z);
+      (acc3).z = mad((a3).z,(b2).z,(acc3).z);
+      (acc3).z = mad((a3).w,(b3).z,(acc3).z);
+      (acc3).w = mad((a3).x,(b0).w,(acc3).w);
+      (acc3).w = mad((a3).y,(b1).w,(acc3).w);
+      (acc3).w = mad((a3).z,(b2).w,(acc3).w);
+      (acc3).w = mad((a3).w,(b3).w,(acc3).w);
+    }}
+    *((__global float4*)(res+0)) = (float4)(float4)((acc0).x,(acc0).y,(acc0).z,(acc0).w);
+    *((__global float4*)(res+{dim})) = (float4)(float4)((acc1).x,(acc1).y,(acc1).z,(acc1).w);
+    *((__global float4*)(res+{dim}*2)) = (float4)(float4)((acc2).x,(acc2).y,(acc2).z,(acc2).w);
+    *((__global float4*)(res+{dim}*3)) = (float4)(float4)((acc3).x,(acc3).y,(acc3).z,(acc3).w);
+  }}
+  """).build()
+  
+  knl = prg.matmul
+  knl(queue, (2,2), (2,2), a_g, b_g, res_g) #todo check shape
+  cl.enqueue_copy(queue, res_np, res_g)
+  return res_np
