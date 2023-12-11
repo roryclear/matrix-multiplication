@@ -2,7 +2,7 @@ import numpy as np
 import pyopencl as cl
 
 ys = 2;
-xs = 4;
+xs = 8;
 platform = cl.get_platforms()
 my_gpu_devices = platform[0].get_devices(device_type=cl.device_type.GPU)
 ctx = cl.Context(devices=my_gpu_devices)
@@ -29,33 +29,57 @@ def matmul(a,b):
 	int endY = startY + ({dim} / {local_0});
 	for(int y = startY; y < endY; y+={ys}) {{
 		for(int x = 0; x < {dim}; x+={xs}) {{
-			float acc[2][4];
+			float acc[2][8];
 			acc[0][0] = 0;
 			acc[0][1] = 0;
 			acc[0][2] = 0;
 			acc[0][3] = 0;
+			acc[0][4] = 0;
+			acc[0][5] = 0;
+			acc[0][6] = 0;
+			acc[0][7] = 0;
 			acc[1][0] = 0;
 			acc[1][1] = 0;
 			acc[1][2] = 0;
 			acc[1][3] = 0;
+			acc[1][4] = 0;
+			acc[1][5] = 0;
+			acc[1][6] = 0;
+			acc[1][7] = 0;
 			for(int k = 0; k < {dim}; k++) {{
-				acc[0][0] += a[y * {dim} + k] * b[x * {dim} + k];
-				acc[0][1] += a[y * {dim} + k] * b[(x + 1) * {dim} + k];
-				acc[0][2] += a[y * {dim} + k] * b[(x + 2) * {dim} + k];
-				acc[0][3] += a[y * {dim} + k] * b[(x + 3) * {dim} + k];
-				acc[1][0] += a[(y + 1) * {dim} + k] * b[(x) * {dim} + k];
-				acc[1][1] += a[(y + 1) * {dim} + k] * b[(x + 1) * {dim} + k];
-				acc[1][2] += a[(y + 1) * {dim} + k] * b[(x + 2) * {dim} + k];
-				acc[1][3] += a[(y + 1) * {dim} + k] * b[(x + 3) * {dim} + k];
+				acc[0][0] += a[y * {dim} + k] * b[k * {dim} + x];
+				acc[0][1] += a[y * {dim} + k] * b[k * {dim} + (x + 1)];
+				acc[0][2] += a[y * {dim} + k] * b[k * {dim} + (x + 2)];
+				acc[0][3] += a[y * {dim} + k] * b[k * {dim} + (x + 3)];
+				acc[0][4] += a[y * {dim} + k] * b[k * {dim} + (x + 4)];
+				acc[0][5] += a[y * {dim} + k] * b[k * {dim} + (x + 5)];
+				acc[0][6] += a[y * {dim} + k] * b[k * {dim} + (x + 6)];
+				acc[0][7] += a[y * {dim} + k] * b[k * {dim} + (x + 7)];
+				acc[1][0] += a[(y + 1) * {dim} + k] * b[k * {dim} + x];
+				acc[1][1] += a[(y + 1) * {dim} + k] * b[k * {dim} + (x + 1)];
+				acc[1][2] += a[(y + 1) * {dim} + k] * b[k * {dim} + (x + 2)];
+				acc[1][3] += a[(y + 1) * {dim} + k] * b[k * {dim} + (x + 3)];
+				acc[1][4] += a[(y + 1) * {dim} + k] * b[k * {dim} + (x + 4)];
+				acc[1][5] += a[(y + 1) * {dim} + k] * b[k * {dim} + (x + 5)];
+				acc[1][6] += a[(y + 1) * {dim} + k] * b[k * {dim} + (x + 6)];
+				acc[1][7] += a[(y + 1) * {dim} + k] * b[k * {dim} + (x + 7)];
 			}}
 			res[y * {dim} + x] = acc[0][0];
 			res[y * {dim} + x + 1] = acc[0][1];
 			res[y * {dim} + x + 2] = acc[0][2];
 			res[y * {dim} + x + 3] = acc[0][3];
+			res[y * {dim} + x + 4] = acc[0][4];
+			res[y * {dim} + x + 5] = acc[0][5];
+			res[y * {dim} + x + 6] = acc[0][6];
+			res[y * {dim} + x + 7] = acc[0][7];
 			res[(y + 1) * {dim} + x] = acc[1][0];
 			res[(y + 1) * {dim} + x + 1] = acc[1][1];
 			res[(y + 1) * {dim} + x + 2] = acc[1][2];
 			res[(y + 1) * {dim} + x + 3] = acc[1][3];
+			res[(y + 1) * {dim} + x + 4] = acc[1][4];
+			res[(y + 1) * {dim} + x + 5] = acc[1][5];
+			res[(y + 1) * {dim} + x + 6] = acc[1][6];
+			res[(y + 1) * {dim} + x + 7] = acc[1][7];
 		}}
 	}}
 	}}

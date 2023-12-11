@@ -14,15 +14,10 @@ b = np.ones((length,length),dtype=np.float32)
 
 answer = np.empty_like(a)
 
-br = np.zeros_like(b)
-for x in range(length):
-	for y in range(length):
-		br[x][y] = b[y][x]
-
 opencl_time = None
 for _ in range(20):
 	start_time = time.time()
-	oo = mmo.matmul(a,br)
+	oo = mmo.matmul(a,b)
 	t = time.time() - start_time
 	if opencl_time == None or t < opencl_time:
 		opencl_time = t
