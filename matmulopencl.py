@@ -162,9 +162,9 @@ def matmul2(a,b):
     float4 acc1 = (float4)(0.0f,0.0f,0.0f,0.0f);
     float4 acc2 = (float4)(0.0f,0.0f,0.0f,0.0f);
     float4 acc3 = (float4)(0.0f,0.0f,0.0f,0.0f);
-    a+=get_local_id(1)*4*{dim};
-    b+=get_local_id(0)*4;
-    res+=get_local_id(1)*4*{dim} + get_local_id(0)*4;
+    a+=get_global_id(1)*4*{dim};
+    b+=get_global_id(0)*4;
+    res+=get_global_id(1)*4*{dim} + get_global_id(0)*4;
     for(int k = 0; k < {dim}/4; k++) {{
       float4 a0 = (float4)(*((__global float4*)(a+0+k*4)));
       float4 a1 = (float4)(*((__global float4*)(a+{dim}+k*4)));
@@ -251,6 +251,6 @@ def matmul2(a,b):
   """).build()
   
   knl = prg.matmul
-  knl(queue, (4,4), (4,4), a_g, b_g, res_g) #todo check shape
+  knl(queue, (256,256), (16,16), a_g, b_g, res_g) #todo check shape
   cl.enqueue_copy(queue, res_np, res_g)
   return res_np
