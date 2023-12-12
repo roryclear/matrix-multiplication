@@ -1,0 +1,163 @@
+import numpy as np
+import pyopencl as cl
+
+ys = 2;
+xs = 16;
+platform = cl.get_platforms()
+my_gpu_devices = platform[0].get_devices(device_type=cl.device_type.GPU)
+ctx = cl.Context(devices=my_gpu_devices)
+queue = cl.CommandQueue(ctx)
+mf = cl.mem_flags
+local_0 = 1
+
+def matmul(a,b):
+  dim = len(a)
+  a = a.flatten()
+  b = b.flatten()
+  a_g = cl.Buffer(ctx, mf.READ_ONLY | mf.COPY_HOST_PTR, hostbuf=a)
+  b_g = cl.Buffer(ctx, mf.READ_ONLY | mf.COPY_HOST_PTR, hostbuf=b)
+
+  res_np = np.empty([dim, dim]).astype(np.float32).flatten()
+  res_g = cl.Buffer(ctx, mf.WRITE_ONLY, (dim * dim * 4))
+
+  prg = cl.Program(ctx, f"""
+  __kernel void matmul(
+      __global const float *a, __global const float *b, __global float *res)
+  {{
+    for(int i = 0; i < 100000; i++) {{
+      res[0] = a[0]*b[0]+a[1]*b[4]+a[2]*b[8]+a[3]*b[12];
+      res[1] = a[0]*b[1]+a[1]*b[5]+a[2]*b[9]+a[3]*b[13];
+      res[2] = a[0]*b[2]+a[1]*b[6]+a[2]*b[10]+a[3]*b[14];
+      res[3] = a[0]*b[3]+a[1]*b[7]+a[2]*b[11]+a[3]*b[15];
+
+      res[4] = a[4]*b[0]+a[5]*b[4]+a[6]*b[8]+a[7]*b[12];
+      res[5] = a[4]*b[1]+a[5]*b[5]+a[6]*b[9]+a[7]*b[13];
+      res[6] = a[4]*b[2]+a[5]*b[6]+a[6]*b[10]+a[7]*b[14];
+      res[7] = a[4]*b[3]+a[5]*b[7]+a[6]*b[11]+a[7]*b[15];
+
+      res[8] = a[8]*b[0]+a[9]*b[4]+a[10]*b[8]+a[11]*b[12];
+      res[9] = a[8]*b[1]+a[9]*b[5]+a[10]*b[9]+a[11]*b[13];
+      res[10] = a[8]*b[2]+a[9]*b[6]+a[10]*b[10]+a[11]*b[14];
+      res[11] = a[8]*b[3]+a[9]*b[7]+a[10]*b[11]+a[11]*b[15];
+
+      res[12] = a[12]*b[0]+a[13]*b[4]+a[14]*b[8]+a[15]*b[12];
+      res[13] = a[12]*b[1]+a[13]*b[5]+a[14]*b[9]+a[15]*b[13];
+      res[14] = a[12]*b[2]+a[13]*b[6]+a[14]*b[10]+a[15]*b[14];
+      res[15] = a[12]*b[3]+a[13]*b[7]+a[14]*b[11]+a[15]*b[15];
+    }}
+  }}
+  """).build()
+  
+  knl = prg.matmul
+  knl(queue, (local_0,1), (local_0,1), a_g, b_g, res_g) #todo check shape
+  cl.enqueue_copy(queue, res_np, res_g)
+  return res_np
+
+def matmul2(a,b):
+  dim = len(a)
+  a = a.flatten()
+  b = b.flatten()
+  a_g = cl.Buffer(ctx, mf.READ_ONLY | mf.COPY_HOST_PTR, hostbuf=a)
+  b_g = cl.Buffer(ctx, mf.READ_ONLY | mf.COPY_HOST_PTR, hostbuf=b)
+
+  res_np = np.empty([dim, dim]).astype(np.float32).flatten()
+  res_g = cl.Buffer(ctx, mf.WRITE_ONLY, (dim * dim * 4))
+
+  prg = cl.Program(ctx, f"""
+  __kernel void matmul(
+      __global const float *a, __global const float *b, __global float *res)
+  {{
+    for(int i = 0; i < 100000; i++) {{
+      float4 acc0 = (float4)(0.0f,0.0f,0.0f,0.0f);
+      float4 acc1 = (float4)(0.0f,0.0f,0.0f,0.0f);
+      float4 acc2 = (float4)(0.0f,0.0f,0.0f,0.0f);
+      float4 acc3 = (float4)(0.0f,0.0f,0.0f,0.0f);
+      float4 a0 = (float4)(*((__global float4*)(a+0)));
+      float4 a1 = (float4)(*((__global float4*)(a+4)));
+      float4 a2 = (float4)(*((__global float4*)(a+8)));
+      float4 a3 = (float4)(*((__global float4*)(a+12)));
+      float4 b0 = (float4)(*((__global float4*)(b+0)));
+      float4 b1 = (float4)(*((__global float4*)(b+4)));
+      float4 b2 = (float4)(*((__global float4*)(b+8)));
+      float4 b3 = (float4)(*((__global float4*)(b+12)));
+
+      (acc0).x = mad((a0).x,(b0).x,(acc0).x);
+      (acc0).x = mad((a0).y,(b1).x,(acc0).x);
+      (acc0).x = mad((a0).z,(b2).x,(acc0).x);
+      (acc0).x = mad((a0).w,(b3).x,(acc0).x);
+      (acc0).y = mad((a0).x,(b0).y,(acc0).y);
+      (acc0).y = mad((a0).y,(b1).y,(acc0).y);
+      (acc0).y = mad((a0).z,(b2).y,(acc0).y);
+      (acc0).y = mad((a0).w,(b3).y,(acc0).y);
+      (acc0).z = mad((a0).x,(b0).z,(acc0).z);
+      (acc0).z = mad((a0).y,(b1).z,(acc0).z);
+      (acc0).z = mad((a0).z,(b2).z,(acc0).z);
+      (acc0).z = mad((a0).w,(b3).z,(acc0).z);
+      (acc0).w = mad((a0).x,(b0).w,(acc0).w);
+      (acc0).w = mad((a0).y,(b1).w,(acc0).w);
+      (acc0).w = mad((a0).z,(b2).w,(acc0).w);
+      (acc0).w = mad((a0).w,(b3).w,(acc0).w);
+
+      (acc1).x = mad((a1).x,(b0).x,(acc1).x);
+      (acc1).x = mad((a1).y,(b1).x,(acc1).x);
+      (acc1).x = mad((a1).z,(b2).x,(acc1).x);
+      (acc1).x = mad((a1).w,(b3).x,(acc1).x);
+      (acc1).y = mad((a1).x,(b0).y,(acc1).y);
+      (acc1).y = mad((a1).y,(b1).y,(acc1).y);
+      (acc1).y = mad((a1).z,(b2).y,(acc1).y);
+      (acc1).y = mad((a1).w,(b3).y,(acc1).y);
+      (acc1).z = mad((a1).x,(b0).z,(acc1).z);
+      (acc1).z = mad((a1).y,(b1).z,(acc1).z);
+      (acc1).z = mad((a1).z,(b2).z,(acc1).z);
+      (acc1).z = mad((a1).w,(b3).z,(acc1).z);
+      (acc1).w = mad((a1).x,(b0).w,(acc1).w);
+      (acc1).w = mad((a1).y,(b1).w,(acc1).w);
+      (acc1).w = mad((a1).z,(b2).w,(acc1).w);
+      (acc1).w = mad((a1).w,(b3).w,(acc1).w);
+
+      (acc2).x = mad((a2).x,(b0).x,(acc2).x);
+      (acc2).x = mad((a2).y,(b1).x,(acc2).x);
+      (acc2).x = mad((a2).z,(b2).x,(acc2).x);
+      (acc2).x = mad((a2).w,(b3).x,(acc2).x);
+      (acc2).y = mad((a2).x,(b0).y,(acc2).y);
+      (acc2).y = mad((a2).y,(b1).y,(acc2).y);
+      (acc2).y = mad((a2).z,(b2).y,(acc2).y);
+      (acc2).y = mad((a2).w,(b3).y,(acc2).y);
+      (acc2).z = mad((a2).x,(b0).z,(acc2).z);
+      (acc2).z = mad((a2).y,(b1).z,(acc2).z);
+      (acc2).z = mad((a2).z,(b2).z,(acc2).z);
+      (acc2).z = mad((a2).w,(b3).z,(acc2).z);
+      (acc2).w = mad((a2).x,(b0).w,(acc2).w);
+      (acc2).w = mad((a2).y,(b1).w,(acc2).w);
+      (acc2).w = mad((a2).z,(b2).w,(acc2).w);
+      (acc2).w = mad((a2).w,(b3).w,(acc2).w);
+
+      (acc3).x = mad((a3).x,(b0).x,(acc3).x);
+      (acc3).x = mad((a3).y,(b1).x,(acc3).x);
+      (acc3).x = mad((a3).z,(b2).x,(acc3).x);
+      (acc3).x = mad((a3).w,(b3).x,(acc3).x);
+      (acc3).y = mad((a3).x,(b0).y,(acc3).y);
+      (acc3).y = mad((a3).y,(b1).y,(acc3).y);
+      (acc3).y = mad((a3).z,(b2).y,(acc3).y);
+      (acc3).y = mad((a3).w,(b3).y,(acc3).y);
+      (acc3).z = mad((a3).x,(b0).z,(acc3).z);
+      (acc3).z = mad((a3).y,(b1).z,(acc3).z);
+      (acc3).z = mad((a3).z,(b2).z,(acc3).z);
+      (acc3).z = mad((a3).w,(b3).z,(acc3).z);
+      (acc3).w = mad((a3).x,(b0).w,(acc3).w);
+      (acc3).w = mad((a3).y,(b1).w,(acc3).w);
+      (acc3).w = mad((a3).z,(b2).w,(acc3).w);
+      (acc3).w = mad((a3).w,(b3).w,(acc3).w);
+
+      *((__global float4*)(res+0)) = (float4)(float4)((acc0).x,(acc0).y,(acc0).z,(acc0).w);
+      *((__global float4*)(res+4)) = (float4)(float4)((acc1).x,(acc1).y,(acc1).z,(acc1).w);
+      *((__global float4*)(res+8)) = (float4)(float4)((acc2).x,(acc2).y,(acc2).z,(acc2).w);
+      *((__global float4*)(res+12)) = (float4)(float4)((acc3).x,(acc3).y,(acc3).z,(acc3).w);
+    }}
+  }}
+  """).build()
+  
+  knl = prg.matmul
+  knl(queue, (local_0,1), (local_0,1), a_g, b_g, res_g) #todo check shape
+  cl.enqueue_copy(queue, res_np, res_g)
+  return res_np
